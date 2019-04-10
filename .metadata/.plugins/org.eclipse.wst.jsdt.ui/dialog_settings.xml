@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<item value="753" key="org.eclipse.wst.jsdt.uicleanup_pagemodify_dialog.preferred_width"/>
+	<item value="381" key="org.eclipse.wst.jsdt.uicleanup_pagemodify_dialog.preferred_height"/>
+	<item value="0" key="org.eclipse.wst.jsdt.uiformatter_page.white_space_tab_page.node"/>
+	<item value="1" key="org.eclipse.wst.jsdt.uiformatter_page.line_wrapping_tab_page.last_category_index"/>
+	<item value="121" key="org.eclipse.wst.jsdt.uiformatter_pagemodify_dialog.preferred_y"/>
+	<item value="264" key="org.eclipse.wst.jsdt.uicleanup_pagemodify_dialog.preferred_x"/>
+	<item value="84" key="org.eclipse.wst.jsdt.uicleanup_pagemodify_dialog.preferred_y"/>
+	<item value="728" key="org.eclipse.wst.jsdt.uiformatter_pagemodify_dialog.preferred_height"/>
+	<item value="1" key="org.eclipse.wst.jsdt.uicleanup_pagemodify_dialog.last_focus"/>
+	<item value="1872" key="org.eclipse.wst.jsdt.uiformatter_pagemodify_dialog.preferred_x"/>
+	<item value="0" key="org.eclipse.wst.jsdt.uiformatter_page.white_space.java_view.inner"/>
+	<item value="-1" key="org.eclipse.wst.jsdt.uiformatter_page.modify_dialog_tab_page.last_focus_index"/>
+	<item value="1001" key="org.eclipse.wst.jsdt.uiformatter_pagemodify_dialog.preferred_width"/>
+	<section name="ProblemSeveritiesConfigurationBlock">
+		<item value="false" key="expanded2"/>
+		<item value="false" key="expanded1"/>
+		<item value="false" key="expanded4"/>
+		<item value="false" key="expanded3"/>
+		<item value="false" key="expanded5"/>
+		<item value="true" key="expanded0"/>
+	</section>
+	<section name="completion_proposal_size">
+	</section>
+	<section name="JavaElementSearchActions">
+	</section>
+</section>

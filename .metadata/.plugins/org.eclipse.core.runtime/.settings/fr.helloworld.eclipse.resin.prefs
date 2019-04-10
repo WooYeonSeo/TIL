@@ -1,0 +1,6 @@
+#Fri Jan 28 15:49:43 KST 2011
+webRootlist=/Web root--/Web Content--/webApplication--/
+eclipse.preferences.version=1
+socketWaitPort=7777
+restartPort=7779
+stopPort=7778

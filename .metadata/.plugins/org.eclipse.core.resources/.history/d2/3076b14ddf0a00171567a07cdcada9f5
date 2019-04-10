@@ -1,0 +1,243 @@
+<%@page import="com.aimaxsoft.sssdframework.util.EnvUtility"%>
+<%@page import="java.util.List"%>
+<%@ page contentType="text/html; charset=utf-8" session="false"%>
+<%@ page import="com.aimaxsoft.sssdframework.web.RequestParameter"%>
+<%@page import="com.aimaxsoft.sssdframework.i18n.ContentsManager"%>
+<%@ page import="com.aimaxsoft.sssdframework.db.DataCabinet"%>
+<%@ page import="com.aimaxsoft.sssdframework.util.DateNTime"%>
+<%@page import="com.aimaxsoft.sssdframework.io.SProperty"%>
+<%@page import="com.aimaxsoft.sssdframework.util.Function"%>
+<%@page import="com.aimaxsoft.sssdframework.util.Change"%>
+<%@page import="com.aimaxsoft.sssdframework.db.Record"%>
+<%@page import="java.text.SimpleDateFormat"%>
+<%@page import="java.util.ResourceBundle"%>
+<%@page import="java.text.MessageFormat"%>
+<%@page import="java.util.Calendar"%>
+<%@page import="java.util.Date"%>
+<%@page import="util.FileUtil"%>
+<%@page import="util.EtcUtil"%>
+<%
+  int menu_1 = 2;
+  int menu_2 = 1;
+  int menu_3 = 0;
+ 
+  RequestParameter param = (RequestParameter) request.getAttribute("param");
+  ResourceBundle viewItem = ContentsManager.getResourceBundle("eclass_contents");
+  DataCabinet scheduleDc = (DataCabinet) request.getAttribute("scheduleDc");
+  
+  String[][] data = (String[][])scheduleDc.getData("data");
+  String[][] seq  = (String[][])scheduleDc.getData("seq");
+  int[] count     = (int[])scheduleDc.getData("count");
+  int[][] ds      = (int[][])scheduleDc.getData("ds");
+  int prevYear    = ((Integer)scheduleDc.getData("prevYear")).intValue();
+  int prevMonth   = ((Integer)scheduleDc.getData("prevMonth")).intValue();
+  int nextYear    = ((Integer)scheduleDc.getData("nextYear")).intValue();
+  int nextMonth   = ((Integer)scheduleDc.getData("nextMonth")).intValue();
+  int year        = ((Integer)scheduleDc.getData("year")).intValue();
+  int month       = ((Integer)scheduleDc.getData("month")).intValue();
+  
+  int day = 1;
+  
+  int toYear  = DateNTime.getYear();
+  int toMonth = DateNTime.getMonth();
+  int toDay   = DateNTime.getDay();
+  
+  // 교수 혹은 학생이 맞는지 체크
+  boolean isUser = false;
+  boolean isIcsUse = "Y".equals(Change.null2empty(EnvUtility.getSProperty().getString("ics.feed.use.yn"))) ? true : false;
+  if (request.getSession().getAttribute("users") != null) {
+    List users = (List) request.getSession().getAttribute("users");
+    if (users.size() > 0) {
+//       LoginUser user = (LoginUser) users.get(users.size()-1);
+//       if ( (!"".equals(user.prof_id) || !"".equals(user.stu_id)) && "".equals(user.admin_auth) ) {
+     //auth = 2 : 교수
+     //auth = 1 : 학생, 청강생, 직원
+     //auth = 0 : 관리자
+//       if ( ( "1".equals(user.auth)  || "2".equals(user.auth) ) ) {
+//         isUser = true;
+//       }
+      isUser = true;
+    }
+  }
+%>
+          <script>
+            //캘린더 조회
+            function showCalendarSharePopup(){
+              $.ajax({
+                url: "/ilos/ext/ics/calendar_share_pop_m.acl",
+                type: "POST",
+                async: true,
+                data: {
+                  encoding : "utf-8"
+                },
+                success: function(data) {
+                  if (data) {
+                    $("#basic_list").css("display","none");
+                    $("#ics_feed_form").html(data);
+                    $("#ics_feed_form").css("display","block");
+                    getUserCalendarUrl();
+                    $('html, body').animate({
+                      scrollTop : 0
+                    }, 0);
+                  }
+                },
+                error: function(data) {
+                  alert("error22:"+data);
+                  $("#loading").hide();
+                }
+              });
+            }
+          </script>
+          <!-- 달력 영역 -->
+          <div style="overflow: hidden;" id="schedule">
+            <div style="overflow: hidden; padding: 12px 15px;" class="site-background-color">
+              <div style="position: relative;">
+                <%if(!param.getString("session.user_id").equals("")){%>
+                <img src="/ilos/images/common/add_schedule.png" style="position: absolute; left: 0;" onclick="insertFormSchedule();"/>
+                <%} %>
+                <div style="width: 50%; font-size: 18px; font-weight: bold; color: #fff; margin: 0 auto; text-align: center;">
+                  <img src="/ilos/images/common/pre_month.png" onclick="getMainSchedule('bf');" style="position: relative; top: 3px;">
+                  <span id="Month" onclick="getMainSchedule('to');"></span>
+                  <img src="/ilos/images/common/next_month.png" onclick="getMainSchedule('at');" style="position: relative; top: 3px;">
+                </div>
+              <%
+                if (isUser && isIcsUse) {
+              %>
+                <img src="/ilos/images/common/view_list.png" style="position: absolute; right: 25px; top: 2px;" onclick="getMainScheduleList('');"/>
+                <img src="/ilos/images/common/feed_white.png" style="position: absolute; right: 0; top: 2px;" title="<%=viewItem.getString("캘린더구독") %>" onclick=";showCalendarSharePopup();"/>
+              <%
+                } else {
+              %>
+                <img src="/ilos/images/common/view_list.png" style="position: absolute; right: 0; top: 2px;" onclick="getMainScheduleList('');"/>
+              <%} %>
+              </div>
+            </div>
+            <div id="shedule_calendar_form" class="shedule_calendar">
+              <table class="main-Schedule">
+                <colgroup>
+                  <col style="width:46px;">
+                  <col style="width:46px;">
+                  <col style="width:46px;">
+                  <col style="width:46px;">
+                  <col style="width:46px;">
+                  <col style="width:46px;">
+                  <col style="width:46px;">
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th class="schedule_th" scope="col" style="color: #f3928a;"><%=viewItem.getString("요일축약.일") %></th>
+                    <th class="schedule_th" scope="col" style="color: #606060;"><%=viewItem.getString("요일축약.월") %></th>
+                    <th class="schedule_th" scope="col" style="color: #606060;"><%=viewItem.getString("요일축약.화") %></th>
+                    <th class="schedule_th" scope="col" style="color: #606060;"><%=viewItem.getString("요일축약.수") %></th>
+                    <th class="schedule_th" scope="col" style="color: #606060;"><%=viewItem.getString("요일축약.목") %></th>
+                    <th class="schedule_th" scope="col" style="color: #606060;"><%=viewItem.getString("요일축약.금") %></th>
+                    <th class="schedule_th" scope="col" style="color: #5ec5f3;" class="border-right"><%=viewItem.getString("요일축약.토") %></th>
+                  </tr>
+                </thead>
+                <tbody>
+                <%
+                //오늘체크
+                boolean thisMonth = year == toYear && month == toMonth; 
+                boolean selectDay = false; 
+                  
+                int cnt    = 0;
+                int sindex = 0;
+                String[] styles = new String[]    {"#f3928a", "black", "black", "black", "black", "black", "#5ec5f3"};
+                String   style  = styles[sindex];
+                
+                int currYear = prevYear;
+                int currMonth = prevMonth;
+                boolean margin_flag = false;
+                int margin_left = 16;
+                for(int i = 0; i < 6 && ds[i][0] != 0; i++) {
+                %>
+                  <tr>
+                  <%
+                    for(int j = 0; j < 7; j++, cnt++) {
+                      if(ds[i][j] == 1) {
+                        ++sindex;
+                      }
+                      if(sindex == 1) {
+                        currYear = year;
+                        currMonth = month;
+                      }
+                      else if(sindex == 2) {
+                        currYear = nextYear;
+                        currMonth = nextMonth;
+                      }
+        
+                      selectDay   = sindex == 1 && ds[i][j] == param.getInt("day");
+                      margin_flag = false;
+                      margin_left = 15;
+                  %>
+                    <td class="" onclick="getMainSchedule('','<%=currYear%>-<%=currMonth%>-<%=ds[i][j]%>');" style="cursor: pointer;">
+                      <div id="<%=currMonth%>_<%=ds[i][j]%>" style="color:<%=sindex != 1 ? "#bbbbbb" : styles[j] %>; width: 25px; height: 11px; margin: 0 auto; padding: 3px 0; border: 1px solid #fff; border-radius: 2px; " class="day <%=thisMonth && ds[i][j]==toDay && sindex == 1 ? "today_cal" : selectDay ? "select_cal" : "" %> "><%=ds[i][j] %></div>
+                      <div style="overflow: hidden; padding: 1px 9.5px 4px 9.5px;">
+                      <% 
+                        for(int m = 0; m < data[cnt].length; m++) {
+                          if(data[cnt][m] != null) {
+                            margin_flag = true;
+                            margin_left = margin_left-4;
+                      %>
+<%--                         <div id="<%=currMonth%>_<%=ds[i][j]%>_<%=m %>" style="overflow: hidden; width: 5px; height: 5px; background: url('/ilos/images/common/<%=data[cnt][m] %>_dott_5.png') no-repeat; float: left; margin: 0 1px 3px 1px; " title="<%=viewItem.getString(data[cnt][m]+".일정")%>"></div> --%>
+                        <img id="<%=currMonth%>_<%=ds[i][j]%>_<%=m %>" src="/ilos/images/common/<%=data[cnt][m] %>_dott_5.png"  title="<%=viewItem.getString(data[cnt][m]+".일정")%>" style="overflow: hidden; width: 5px; height: 5px; margin: 0 0 3px 0;">
+                      <% 
+                          } 
+                        } 
+                      %>
+                      <%-- <%if(margin_flag) {%>
+                      <script type="text/javascript">$("#<%=currMonth%>_<%=ds[i][j]%>_0").css("margin-left","<%=margin_left%>px")</script>
+                      <%} %> --%>
+                      </div>
+                    </td>
+                    <%} %>
+                  </tr>
+                <%} %>
+                </tbody>
+              </table>
+              
+              <!-- 상세 영역 -->
+              <div class="schedule_txt_box">
+                <!-- 조회폼 -->
+                <div style="overflow: hidden;" class="schedule_txt_view"></div>
+                <!-- 등록폼 -->
+                <div style="overflow: hidden; display: none;" class="schedule_txt_insert">
+                  <div style="overflow: hidden; float: left;">
+                    <input value="<%=EtcUtil.shortDate(DateNTime.getDate()) %>" id="SCH_DT" type="text" style="border: 1px solid #ddd; width: 70px; height: 24px; margin-right: 5px; text-align: center;" readonly="readonly">
+                    
+                    <select id="SCH_HH" style="border: 1px solid #ddd; width: auto; height: 24px; margin-right: 5px; text-align: center;">
+                      <%
+                        String curHH = DateNTime.getTime().substring(0,2);
+                        String hh ="";
+                        for(int i=0; i<24; i++) {
+                          if( i < 10) hh = "0"+i;
+                          else hh = i+"";
+                      %>
+                      <option value="<%=hh %>" <%= curHH.equals(hh) ? "selected":"" %>><%=hh %></option>
+                      <%} %>
+                    </select>
+                    
+                    <select id="SCH_MM" style="border: 1px solid #ddd; width: auto; height: 24px; margin-right: 5px; text-align: center;">
+                      <%
+                        String curMIN = DateNTime.getTime().substring(2,4);
+                        String mi ="";
+                        for(int i=0; i<60; i+=10) {
+                          if( i < 10 ) mi = "0"+i;
+                          else mi = i+"";
+                      %>
+                      <option value="<%=mi %>" <%= curMIN.equals(mi) ? "selected":"" %>><%=mi %></option>
+                      <%
+                        } 
+                      %>
+                    </select>
+                  </div>
+                  <div style="overflow: hidden; float: right;">
+                    <div class="save_schedule"   onclick="insertSchedule();"><%=viewItem.getString("B.저장") %></div>
+                    <div class="cencle_schedule" onclick="cencleSchedule('','inst');"><%=viewItem.getString("B.취소") %></div>
+                  </div>
+                  <input id="SCH_TITLE" style="clear: both; overflow: hidden; width: 96%; height: 24px; border: 1px solid #ddd; margin-top: 10px;">
+                  <textarea id="SCH_CONTENTS" style="clear: both; overflow: hidden; width: 97%; height: 72px; border: 1px solid #ddd; margin-top: 10px;"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>

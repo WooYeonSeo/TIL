@@ -1,0 +1,53 @@
+package util;
+
+import java.io.FileNotFoundException;
+import java.io.FileInputStream;
+import java.io.IOException;
+
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+
+
+public class ExcelUtil {
+ 
+  static public Workbook getWorkbook(String excelPath){
+    HSSFWorkbook hWorkBook = null;    // ø¢ºø 97-2003 πˆ¿¸
+    XSSFWorkbook xWorkBook = null;    // ø¢ºø ªÛ¿ßπˆ¿¸
+    Workbook excelWB = null;
+    if(ExcelUtil.getExcelType(excelPath)){        //true ¿Ã∏È xls , false¿Ã∏È xlsx
+      try {
+        hWorkBook = new HSSFWorkbook(new FileInputStream(excelPath));
+      } catch (FileNotFoundException e) {
+        e.printStackTrace();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      excelWB = hWorkBook;
+    }else{
+      try {
+        xWorkBook = (XSSFWorkbook) WorkbookFactory.create(new FileInputStream(excelPath));
+      } catch (InvalidFormatException e) {
+        e.printStackTrace();
+      } catch (FileNotFoundException e) {
+        e.printStackTrace();
+      } catch (IOException e) {
+        e.printStackTrace();
+      } 
+      excelWB = xWorkBook;
+    }
+    return excelWB;
+  }
+  /**
+   * ø¢ºø ≈∏¿‘ π›»Ø
+   */
+  static public boolean getExcelType(String excelPath) 
+  {
+    if(excelPath.endsWith(".xls"))
+      return true;
+    return false;
+  }
+}

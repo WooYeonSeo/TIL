@@ -1,0 +1,276 @@
+<!--
+     DTD for the SQLX File in 3SD Framework
+
+     To support validation of your sqlx files, include the following
+     DOCTYPE element at the beginning (after the "xml" declaration):
+
+     <!DOCTYPE SQLX PUBLIC
+       "-//AIMAXSOFT co//DTD SQLX 2.0//EN"
+       "http://www.aimaxsoft.co.kr/framework/dtds/sqlx_2_0.dtd">
+-->
+
+
+<!--The "sqlx" element is the root of the sqlx file hierarchy, 
+and contains nested elements for dealing with sql query.
+-->
+<!ELEMENT sqlx (executeQuery)+>
+
+
+<!--The "executeQuery" element describes the set of a sql statement. 
+     The following attributes are defined:
+
+     id             -Mandatory input
+                    -Identifier of <executeQuery>
+
+     statementType  -Mandatory input
+                    -Allows one of three parameters: stmt, pstmt, cstmt
+                    -stmt : Statement of JDBC is used
+                    -pstmt : PreparedStatement of JDBC is used 
+                    -cstmt : CallableStatement of JDBC is used 
+     
+     cacheType      -Optional input
+                    -Used for query only
+                    -Allows either buffred (for buffer cache) or disk (disk cache) 
+
+     timeout        -Optional input
+                    -Used for query only
+                    -Allows number value that is milli-second
+
+-->
+<!ELEMENT executeQuery ((propertyParam|noticeCache)*,query)>
+<!ATTLIST executeQuery id             CDATA               #REQUIRED>
+<!ATTLIST executeQuery statementType (stmt|pstmt|cstmt)   #REQUIRED>
+<!ATTLIST executeQuery cacheType (buffered|disk)          #IMPLIED>
+<!ATTLIST executeQuery timeout        CDATA               #IMPLIED>
+
+<!--The "propertyParam" element describes ... 
+     The following attributes are defined:
+
+     name           -Mandatory input
+                    -Parameter name received from SQLX
+
+     type           -Optional input
+                    -Allows either string or number. The The default type is string
+
+     prefix         -Optional input.
+                    -Adds an input value in front of a parameter
+     
+     suffix         -Optional input
+                    -Adds an input value after a parameter
+     
+     default        -Optional input
+                    -Applies an input value if there is no parameter name (NULL)
+
+     unmask         -Optional input.
+                    -Removes input mask characters in the parameter value
+
+     trim           -Optional input
+                    -Allows either yes or no.  The default value is no
+                    -Used when param type is string.  'no' removes front and back of space letter.
+
+     length         -Optional input
+                    -Allows until input length in the parameter value.
+                    
+-->
+<!ELEMENT propertyParam EMPTY>
+<!ATTLIST propertyParam   name      CDATA                  #REQUIRED>
+<!ATTLIST propertyParam   type      (string|number)        #IMPLIED>
+<!ATTLIST propertyParam   prefix    CDATA                  #IMPLIED>
+<!ATTLIST propertyParam   suffix    CDATA                  #IMPLIED>
+<!ATTLIST propertyParam   default   CDATA                  #IMPLIED>
+<!ATTLIST propertyParam   unmask    CDATA                  #IMPLIED>
+<!ATTLIST propertyParam   trim      (yes|no)               #IMPLIED>
+<!ATTLIST propertyParam   length     CDATA                 #IMPLIED>
+
+
+<!--The "noticeCache" element describes ... 
+     The following attributes are defined:
+
+     modifyTables   -Mandatory input
+                    -Allows either select or modify
+                    -select is used to notify Cache Manager of an internal query table in query SQL (refer cacheType in the <executeQuery> element).
+                    -modify is used to notify Cache Manager of the internally processed table list, such as inserting, changing, deleting SQL sentence, procedure, or trigger.
+
+     selectTables   -Mandatory input
+                    -Lists table names.  The separator is ','.
+     
+-->
+<!ELEMENT noticeCache EMPTY>
+<!ATTLIST noticeCache   command   (select|modify)                   #REQUIRED>
+<!ATTLIST noticeCache   tables    CDATA                             #REQUIRED>
+
+
+<!--The "query" element describes ... 
+     The following attributes are defined:
+     
+-->
+<!ELEMENT query (#PCDATA|param|isNull|isNotNull|isEmpty|isNotEmpty|isEqual|isNotEqual|isGreaterThan|isGreaterEqual|isLessThan|isLessEqual)*>
+
+
+<!--The "param" element describes ... 
+     The following attributes are defined:
+
+     name           -Mandatory input
+                    -Parameter name received from SQLX
+                    
+     index          -Optional input.
+                    -Corresponds to the index value of setXXX(index, Object) in PreparedStatement, CallableStatement of JDBC 
+                    -Allows one of 1, 2, 3, ... or #, in which # assigns an index automatically.
+
+     type           -Optional input
+                    -Allows either string or number. The default value is string.
+
+     prefix         -Optional input
+                    -Adds an input value in front of a parameter.
+
+     suffix         -Optional input
+                    -Adds an input value after a parameter.
+     
+     default        -Optional input
+                    -Applies an input value if there is no parameter name (NULL).
+
+     unmask         -Optional input.
+                    -Removes input mask characters in the parameter value.
+     
+     quote          -Optional input
+                    -Allows either yes or no.  The default value is yes
+                    -Used when param type is string.  'no' removes quotation marks (').
+
+     boundary       -Optional input
+                    -Allows either in or out.  The default value is in
+                    -Specifies input/output parameters in JDBC. 'in' specifies an input parameters, and 'out' does an output parameter
+     
+     xss            -Optional input
+                    -Allows only all.
+                    -Replace xss(cross site script) characters in the parameter value.
+
+     trim           -Optional input
+                    -Allows either yes or no.  The default value is no
+                    -Used when param type is string.  'no' removes front and back of space letter.
+
+     length         -Optional input
+                    -Allows until input length in the parameter value.
+                    
+-->
+<!ELEMENT param EMPTY>
+<!ATTLIST param   name      CDATA                                         #REQUIRED>
+<!ATTLIST param   type      (string|nstring|number|int|long|float|double|LONG|CLOB|BLOB|BigString|NBigString)                #IMPLIED>
+<!ATTLIST param   index     CDATA                                         #IMPLIED>
+<!ATTLIST param   prefix    CDATA                                         #IMPLIED>
+<!ATTLIST param   suffix    CDATA                                         #IMPLIED>
+<!ATTLIST param   default   CDATA                                         #IMPLIED>
+<!ATTLIST param   unmask    CDATA                                         #IMPLIED>
+<!ATTLIST param   quote     (yes|no)                                      #IMPLIED>
+<!ATTLIST param   boundary  (in|out)                                      #IMPLIED>
+<!ATTLIST param   xss       (all)                                         #IMPLIED>
+<!ATTLIST param   trim      (yes|no)                                      #IMPLIED>
+<!ATTLIST param   length     CDATA                                        #IMPLIED>
+
+<!--The "isNull" element describes that following statements are executed if the parameter is NULL
+     The following attributes are defined: 
+
+     property       -A parameter key received from a program
+-->
+<!ELEMENT isNull (#PCDATA|param|isNull|isNotNull|isEmpty|isNotEmpty|isEqual|isNotEqual|isGreaterThan|isGreaterEqual|isLessThan|isLessEqual)*>
+<!ATTLIST isNull  property  CDATA #REQUIRED>
+
+
+<!--The "isNotNull" element describes that following statements are executed if the parameter is not NULL
+     The following attributes are defined:
+
+     property       -A parameter key received from a program.
+-->
+<!ELEMENT isNotNull (#PCDATA|param|isNull|isNotNull|isEmpty|isNotEmpty|isEqual|isNotEqual|isGreaterThan|isGreaterEqual|isLessThan|isLessEqual)*>
+<!ATTLIST isNotNull  property  CDATA #REQUIRED>
+
+
+<!--The "isEmpty" element describes that following statements are executed if the parameter is an empty string
+     The following attributes are defined:
+
+     property       -A parameter key received from a program.
+-->
+<!ELEMENT isEmpty (#PCDATA|param|isNull|isNotNull|isEmpty|isNotEmpty|isEqual|isNotEqual|isGreaterThan|isGreaterEqual|isLessThan|isLessEqual)*>
+<!ATTLIST isEmpty  property  CDATA #REQUIRED>
+
+
+<!--The "isNotEmpty" element describes that following statements are executed if the parameter is not an empty string
+     The following attributes are defined:
+
+     property       -A parameter key received from a program.
+-->
+<!ELEMENT isNotEmpty (#PCDATA|param|isNull|isNotNull|isEmpty|isNotEmpty|isEqual|isNotEqual|isGreaterThan|isGreaterEqual|isLessThan|isLessEqual)*>
+<!ATTLIST isNotEmpty  property  CDATA #REQUIRED>
+
+
+<!--The "isEqual" element describes that following statements are executed if the parameter is the same as a compared value.  There can be multiple compared values (compareValue) separated by '|'.
+
+     The following attributes are defined:
+
+     property       -A parameter key received from a program.
+         
+     compareValue   -A value to be compared with property.
+-->
+<!ELEMENT isEqual (#PCDATA|param|isNull|isNotNull|isEmpty|isNotEmpty|isEqual|isNotEqual|isGreaterThan|isGreaterEqual|isLessThan|isLessEqual)*>
+<!ATTLIST isEqual  property      CDATA  #REQUIRED>
+<!ATTLIST isEqual  compareValue  CDATA  #REQUIRED>
+
+
+<!--The "isNotEqual" element describes that following statements are executed if the parameter is different from a compared value.  There can be multiple compared values (compareValue) separated by '|'.
+
+     The following attributes are defined:
+
+     property       -A parameter key received from a program.
+         
+     compareValue   -A value to be compared with property.
+-->
+<!ELEMENT isNotEqual (#PCDATA|param|isNull|isNotNull|isEmpty|isNotEmpty|isEqual|isNotEqual|isGreaterThan|isGreaterEqual|isLessThan|isLessEqual)*>
+<!ATTLIST isNotEqual  property      CDATA  #REQUIRED>
+<!ATTLIST isNotEqual  compareValue  CDATA  #REQUIRED>
+
+
+<!--The "isGreaterThan" element describes that following statements are executed if the parameter is greater than a compared value.
+     The following attributes are defined:
+
+     property       -A parameter key received from a program.
+         
+     compareValue   -A value to be compared with property.
+-->
+<!ELEMENT isGreaterThan (#PCDATA|param|isNull|isNotNull|isEmpty|isNotEmpty|isEqual|isNotEqual|isGreaterThan|isGreaterEqual|isLessThan|isLessEqual)*>
+<!ATTLIST isGreaterThan  property      CDATA  #REQUIRED>
+<!ATTLIST isGreaterThan  compareValue  CDATA  #REQUIRED>
+
+
+<!--The "isGreaterEqual" element describes that following statements are executed if the parameter is greater than or equal to a compared value.
+     The following attributes are defined:
+
+     property       -A parameter key received from a program.
+         
+     compareValue   -A value to be compared with property
+-->
+<!ELEMENT isGreaterEqual (#PCDATA|param|isNull|isNotNull|isEmpty|isNotEmpty|isEqual|isNotEqual|isGreaterThan|isGreaterEqual|isLessThan|isLessEqual)*>
+<!ATTLIST isGreaterEqual  property      CDATA  #REQUIRED>
+<!ATTLIST isGreaterEqual  compareValue  CDATA  #REQUIRED>
+
+
+<!--The "isLessThan" element describes that following statements are executed if the parameter is less than a compared value.
+     The following attributes are defined:
+
+     property       -A parameter key received from a program.
+         
+     compareValue   -A value to be compared with property.
+-->
+<!ELEMENT isLessThan (#PCDATA|param|isNull|isNotNull|isEmpty|isNotEmpty|isEqual|isNotEqual|isGreaterThan|isGreaterEqual|isLessThan|isLessEqual)*>
+<!ATTLIST isLessThan  property      CDATA  #REQUIRED>
+<!ATTLIST isLessThan  compareValue  CDATA  #REQUIRED>
+
+
+<!--The "isLessEqual" element describes that following statements are executed if the parameter is less than or equal to a compared value.
+     The following attributes are defined:
+
+     property       -A parameter key received from a program.
+         
+     compareValue   -A value to be compared with property.
+-->
+<!ELEMENT isLessEqual (#PCDATA|param|isNull|isNotNull|isEmpty|isNotEmpty|isEqual|isNotEqual|isGreaterThan|isGreaterEqual|isLessThan|isLessEqual)*>
+<!ATTLIST isLessEqual  property      CDATA  #REQUIRED>
+<!ATTLIST isLessEqual  compareValue  CDATA  #REQUIRED>

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Delete 13 resources" deleteContents="false" description="Delete 13 resources" element1="/ilos4.1_00/data/contents/168" element10="/ilos4.1_00/data/contents/202" element11="/ilos4.1_00/data/contents/203" element12="/ilos4.1_00/data/contents/204" element13="/ilos4.1_00/data/contents/205" element2="/ilos4.1_00/data/contents/179" element3="/ilos4.1_00/data/contents/18" element4="/ilos4.1_00/data/contents/181" element5="/ilos4.1_00/data/contents/187" element6="/ilos4.1_00/data/contents/195" element7="/ilos4.1_00/data/contents/196" element8="/ilos4.1_00/data/contents/199" element9="/ilos4.1_00/data/contents/200" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="13" stamp="1504070013944"/>
+</session>

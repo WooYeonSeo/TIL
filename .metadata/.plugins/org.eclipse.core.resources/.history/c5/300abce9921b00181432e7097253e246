@@ -1,0 +1,2706 @@
+<%@page import="org.apache.commons.codec.binary.Base64"%>
+<%@ page contentType="text/html; charset=utf-8" session="false"%>
+<%@ page import="com.aimaxsoft.sssdframework.web.RequestParameter"%>
+<%@ page import="com.aimaxsoft.sssdframework.db.DataCabinet"%>
+<%@ page import="com.aimaxsoft.sssdframework.util.DateNTime"%>
+<%@page import="com.aimaxsoft.sssdframework.db.Record"%>
+<%@page import="util.EtcUtil"%>
+<%@page import="com.aimaxsoft.sssdframework.util.Change"%>
+<%@page import="com.aimaxsoft.sssdframework.i18n.ContentsManager"%>
+<%@page import="java.util.ResourceBundle"%>
+<%@page import="com.aimaxsoft.sssdframework.i18n.DateFormat"%>
+<%@page import="com.aimaxsoft.sssdframework.db.ZeroRecord"%>
+<%
+  int menu_1 = 1;
+  int menu_2 = 2;
+  int menu_3 = 18;
+  
+ 
+  RequestParameter param = (RequestParameter) request.getAttribute("param");
+  ResourceBundle viewItem = ContentsManager.getResourceBundle("eclass_contents");
+
+  DataCabinet dc = (DataCabinet) request.getAttribute("dc");
+  DataCabinet dcInfo = (DataCabinet) request.getAttribute("dcInfo");
+  
+  Record rdInfo = dcInfo.isError() ? new ZeroRecord() : dcInfo.getRecord(0);
+  
+  //학교마다 학번을 쓸지 포탈ID를 쓸지 정하기기 어려워 properties에 id 이름을 정의 한다.
+  String commons_session_id = "".equals(Change.null2empty(EnvUtility.getSProperty().getString("commons.session.id"))) ? "session.user_id":Change.null2empty(EnvUtility.getSProperty().getString("commons.session.id"));
+  
+  //페이징 하는 화면이 있으면 페이징 URL을 정의한다.
+  StringBuffer pageParam = new StringBuffer();
+  pageParam.append("SCH_KEY=").append(param.getString("SCH_KEY"));
+  pageParam.append("&SCH_VALUE=").append(java.net.URLEncoder.encode( param.getXtring("SCH_VALUE"), "utf-8"));
+  pageParam.append("&display=").append(param.getString("display"));
+  pageParam.append("&start=").append(param.getString("start"));    
+  
+  String bns_session_id = "".equals(Change.null2empty(EnvUtility.getSProperty().getString("bns.session.id"))) ? "session.user_id" : Change.null2empty(EnvUtility.getSProperty().getString("bns.session.id"));
+  boolean isVsquare = (EnvUtility.getSProperty().getString("vsquare.api.url") == null || "".equals(EnvUtility.getSProperty().getString("vsquare.api.url"))) ? false : true;
+
+%>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+
+<%@page import="eclass.BRDInfo"%><html lang="<%=viewItem.getLocale()%>">
+<head>
+
+<jsp:include page="/WEB-INF/jsp/inc/header_meta.jsp" ></jsp:include>
+<%@include file="/WEB-INF/jsp/inc/import.jsp" %>
+<%@include file="/WEB-INF/jsp/inc/jquery.jsp" %>
+<script type="text/javascript" src="/ilos/js/jquery.form.js?v=1.2" ></script>
+<script type="text/javascript">
+$(function() {  
+  $(document).mousedown(function(e){
+    var target = $(e.target); 
+    
+    if(!(target.is(".content_item_menu *") || target.is("#item_menu_pop *"))) {
+      $("#item_menu_pop").hide();
+    }
+    
+    if(!target.is("#contextMenu *")) {
+      $('#contextMenu').hide();
+    }
+  }).mouseup(function(e){
+    var target = $(e.target); 
+    
+    if(!target.is(".content_item_menu *")) {
+      $("#item_menu_pop").hide();
+    }
+    
+    $('#contextMenu').hide();
+  }).resize(function() {
+    $("#item_menu_pop").hide();
+  });
+  
+  $('#contextMenu').on("dragstart", function(event){ 
+    return false; 
+  }).on("selectstart", function(event){ 
+    return false; 
+  });
+  
+  //파일이동
+  //파일 경로 클릭
+  $(".file-nav2").click(function(e) {
+    //item 수정화면으로 이동함.
+    e.preventDefault();
+
+    $.ajax({
+      url: "/ilos/pf/contents/contents2_file_list2.acl",
+      type: "POST",
+      data: { 
+          path : $(this).attr("path"),
+          alias : $("#server").val(),
+        encoding : "utf-8"
+            },
+      async: false,
+      success: function(data){
+              $("#files2").html(data);
+        },
+      error : function(html) {
+              alert("error:"+html);
+        }
+    }); 
+  });
+  
+  $("#uploadForm").submit(function() {
+    var currPath = $(".file-nav:last-child").attr("path");
+    document.uploadForm.path.value = currPath;
+    document.uploadForm.alias.value = $("#server").val();
+  }).ajaxForm({
+    beforeSend: function(xhr) {
+      if(document.uploadForm.file.value == "") {
+        alert("<%=viewItem.getString("경고올린파일") %>");
+        e.preventDefault();
+        return;
+      }
+      $("#uploadFile").hide();
+      $("#uploadCancelBtn").show();
+      
+      $("#uploadCancelBtn").click(xhr.abort);
+      document.uploadForm.target = "hidden";
+      
+      $('#status').empty();
+      var percentVal = '0%';
+      $('.bar').width(percentVal);
+      $('.percent').html(percentVal);
+    },
+    uploadProgress: function(event, position, total, percentComplete) {
+      $(".progress").show();
+      var percentVal = percentComplete + '%';
+      var pos = (position / (1024*1024)).toFixed(1) + 'MB';
+      var tot = (total / (1024*1024)).toFixed(1) + 'MB';
+      $('.bar').width(percentVal);
+      $('.percent').html(percentVal);
+      $('.curByte').html(pos);
+      $('.totByte').html(tot);
+      
+      if(position == total){
+        $("#uploadCancelBtn").hide();
+        $("#processing").show();
+      }
+    },
+    complete: function(xhr) {
+      $('#status').html(xhr.responseText);
+  
+      if($("#processing").css("display") == 'none'){
+        $("#uploadCancelBtn").hide();
+        $("#uploadFile").show();
+        $(".progress").hide();  
+      }
+    }
+  });
+  
+  $("#newfile").keypress(function(e) {
+    if(e.which == 13) renameFile();
+  });
+  
+  $("#folderName").keypress(function(e) {
+    if(e.which ==  13) makeFolder();
+  });
+  
+  //increase the default animation speed to exaggerate the effect
+  $.fx.speeds._default = 500;
+
+  $("#editChapterPop").dialog({
+    autoOpen: false,
+    show: "blind",
+    hide: "fade", //explode"
+    modal: true,
+    width: 550,
+    close: function(ev, ui) {
+      //$("#editChapterPop").html('');
+    }
+  });
+  
+  $("#itemPop").dialog({
+    autoOpen: false,
+    show: "blind",
+    hide: "fade", //explode"
+    modal: true,
+    width: 900,
+    minHeight: 600,
+    close: function(ev, ui) {
+      //$("#itemPop").html('');
+    }
+  });
+  
+  $("#manageContentsPop").dialog({
+    autoOpen: false,
+    show: "blind",
+    hide: "fade", //explode"
+    modal: true,
+    width: 800,
+    minHeight: 400,
+    close: function(ev, ui) {
+    }
+  });
+  
+  $("#editLessonPop").dialog({
+    autoOpen: false,
+    show: "blind",
+    hide: "fade", //explode"
+    modal: true,
+    width: 800,
+    close: function(ev, ui) {
+    }
+  });
+  
+  $("#searchPop").dialog({
+    autoOpen: false,
+    show: "blind",
+    hide: "fade", //explode"
+    modal: true,
+    width: 350,
+    close: function(ev, ui) {
+      //$("#searchPop").html('');
+    }
+  });
+  
+  $("#editOrgPop").dialog({
+    autoOpen: false,
+    show: "blind",
+    hide: "fade", //explode"
+    modal: true,
+    width: 500,
+    close: function(ev, ui) {
+    }
+  });
+  
+  $("#cancelPop").dialog({
+    autoOpen: false,
+    show: "blind",
+    hide: "fade", //explode"
+    modal: true,
+    width: 450,
+    close: function(ev, ui) {
+    }
+  });
+  
+  $("#filePop").dialog({
+    autoOpen: false,
+    show: "blind",
+    hide: "fade", //explode"
+    modal: true,
+    width: 590,
+    close: function(ev, ui) {
+      $("#filePop").html('');
+    }
+  });
+  
+  //파일 업로드
+  $( "#dialog4" ).dialog({
+    autoOpen: false,
+    show: {
+          effect: "blind",
+          duration: 500
+        },
+      hide: {
+          effect: "fade",
+          duration: 500
+        },
+    modal: true,
+    height:215,
+    width:340,
+    close:function(){ 
+      $(".progress").hide();
+      $("#processing").hide();
+      $("#uploadCancelBtn").hide();
+      $("#uploadFile").show();
+      document.uploadForm.file.value = "";
+    }
+  });
+
+  //새폴더
+  $( "#dialog5" ).dialog({
+    autoOpen: false,
+    show: {
+          effect: "blind",
+          duration: 500
+        },
+      hide: {
+          effect: "fade",
+          duration: 500
+        },
+    modal: true,
+    height:200,
+    width:340
+  });
+
+  //파일이동
+  $( "#dialog6" ).dialog({
+    autoOpen: false,
+    show: {
+          effect: "blind",
+          duration: 500
+        },
+      hide: {
+          effect: "fade",
+          duration: 500
+        },
+    modal: true,
+    height:450,
+    width:340
+  });
+
+  //이름 바꾸기
+  $( "#dialog7" ).dialog({
+    autoOpen: false,
+    show: {
+          effect: "blind",
+          duration: 500
+        },
+      hide: {
+          effect: "fade",
+          duration: 500
+        },
+    modal: true,
+    height:200,
+    width:340
+  });
+  
+  <% if ( isVsquare ) { %>
+  $( "#vsquarePopupWrap" ).dialog({
+    autoOpen: false,
+    show: "blind",
+    hide: "fade", //explode"
+    modal: true,
+    width:950,
+    height:640,
+    title: "<%=viewItem.getString("V스퀘어CMS가져오기")%>",
+    close:function() {
+      $('#vsquareDisplay').prop("src", "");
+//       loadIems($(".tab-button-on").attr("organization_id"));
+    } 
+  }); 
+
+  <% } %>
+  
+  listPage();
+});
+<% if ( isVsquare ) { %>
+function showVsquarePopup(contentId, orgId, device) {
+  $('#vsquareDisplay').prop("src", "/ilos/ext/vsquare/vsquare_content_list_form.acl?isIframe=resizeVsquareDisplay&contentId=" + contentId + "&appendCallback=loadIems&orgId=" + orgId + "&device="+device);
+  $( "#vsquarePopupWrap" ).dialog("open");
+}
+function loadIems(org, device) { // 어떻게 호출할지 고민좀 해봐야함
+  var device2 = device == "P" ? "M" : "P";
+  var org2 = $("#"+device2+"_org_list").find(".org_selected").val();
+  var content_id = $("#CONTENT_ID").val();
+
+  itemList(device,org);
+  if(org == org2){
+    itemList(device2,org2);  
+  }
+  
+  $('#vsquareDisplay').prop("src", "");
+  $('#vsquarePopupWrap').dialog("close");
+}
+function resizeVsquareDisplay() {
+  var h = $('#vsquareDisplay').contents().find('body')[0];
+  var wrapH = $('#vsquarePopupWrap').height();
+  if (h.scrollHeight > wrapH) {
+    $('#vsquareDisplay').height(h.scrollHeight+"px");
+  } else {
+    $('#vsquareDisplay').height(wrapH+"px");
+  }
+}
+
+function resizeVsquareDisplayScroll(scrollTop) {
+  if (scrollTop) {
+    $('#vsquarePopupWrap').scrollTop(scrollTop);
+  } else {
+    return $('#vsquarePopupWrap').scrollTop();
+  }
+}
+<% } %>
+
+function changeWeek(obj){
+  /* 
+  $(".week_list").find("td").removeClass("selected_week");
+  obj.addClass("selected_week");
+  
+  listPage();
+   */
+  var week = obj.text();
+   
+  if(isNaN(week) || !week){
+    week = "";
+  }
+  
+  document.location.href = '/ilos/pf/course/online_list_form.acl?w='+week;
+}
+
+function listPage(){
+  var week = $(".week_list").find("td[class='selected_week']").text();
+  
+  if(isNaN(week) || !week){
+    week = "";
+    
+    $(".week_list").find("td").first().addClass("selected_week");
+  }
+  
+  $.ajax({
+    url: "/ilos/pf/course/online_view.acl",
+    type: "POST",
+    data: { 
+      SCH_WEEK_NO : week,
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(html){
+        $("#online_list_container").html(html);
+      },
+    error : function(html) {
+        alert("error:"+html);
+      }
+  });  
+}
+
+function editChapter(no, seq){
+  var acl = "";
+  if(seq == ""){
+    acl = "/ilos/pf/course/online_chapter_insert.acl";
+  } else {
+    acl = "/ilos/pf/course/online_chapter_update.acl";
+  }
+
+  var LECT_CANCEL_WEEK_NO = '';
+  var LECT_CANCEL_WEEK_TIME = '';
+  var WEEK_TIME = $("#WEEK_TIME").val()||"";
+  
+  if($("#ATTEND_YN").is(":checked")){
+    if($("#ATTEND_DT").val() == "") {
+      alert("<%=viewItem.getString("경고필수출석일알림")%>");
+      $("#ATTEND_DT").focus();
+      return false;
+    } 
+    
+    if($("#REPLENISH_YN").is(":checked")){
+      if($("#LECT_CANCEL_WEEK_NO").val() == "") {
+        alert("<%=viewItem.getString("수업선택경고")%>");
+        targetAttendPop('');
+        return false;
+      }
+      
+      LECT_CANCEL_WEEK_NO = $("#LECT_CANCEL_WEEK_NO").val();
+      LECT_CANCEL_WEEK_TIME = $("#LECT_CANCEL_WEEK_TIME").val();
+      WEEK_TIME = '99';
+    }
+  }
+  
+  if(!$("#REPLENISH_YN").is(":checked") && $("#WEEK_TIME").find("option").length <= 1){
+    alert("<%=viewItem.getString("출석부생성불능경고")%>");
+    return;
+  }   
+  
+  if(WEEK_TIME == ""){
+    alert("<%=viewItem.getString("차시선택경고")%>");
+    $("#WEEK_TIME").focus();
+    return;
+  }
+  
+  var sdt = $("#LECTURE_SDT").val() + $("#BEGIN_HH").val() + $("#BEGIN_MI").val();
+  var edt = $("#LECTURE_EDT").val() + $("#END_HH").val() + $("#END_MI").val();
+  
+  sdt = sdt.replace(/\./g,'');
+  edt = edt.replace(/\./g,'');
+  
+  if($("#LECTURE_SDT").val() == "") {
+    alert("<%=viewItem.getString("경고필수시작일알림") %>");
+    $("#LECTURE_SDT").focus();
+    return false;
+  }
+
+  if($("#LECTURE_EDT").val() == "") {
+    alert("<%=viewItem.getString("경고필수종료일알림") %>");
+    $("#LECTURE_EDT").focus();
+    return false;
+  }    
+  
+  if(edt <= sdt) {
+    alert("<%=viewItem.getString("경고일자오류") %>");
+    return false;
+  }
+  
+  $.ajax({
+    url: acl,
+    type: "POST",
+    data: { 
+      ud : "<%=param.getString("session.user_id")%>",
+      ky : "<%=param.getString("session.kjkey")%>",
+      LECTURE_WEEKS : seq,
+      LECTURE_WEEKS_TITLE : $("#LECTURE_WEEKS_TITLE").val(),
+      WEEK_TIME : WEEK_TIME,
+      WEEK_NO : no,
+      LECTURE_SDT : sdt,
+      LECTURE_EDT : edt,
+      ATTEND_DT : $("#ATTEND_YN").is(":checked") ? $("#ATTEND_DT").val() : "",
+      ATTEND_TARGET_DV : $("#ATTEND_YN").is(":checked") ? $("#ATTEND_TARGET_DV").val()||"1" : "",
+      LECT_CANCEL_WEEK_NO : LECT_CANCEL_WEEK_NO,
+      LECT_CANCEL_WEEK_TIME : LECT_CANCEL_WEEK_TIME,
+      returnData : "json",      
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+      if(data.isError){
+        alert(data.message);
+        pfRoomAuthCheck(data);
+      }else{
+        if(data.isKjkey){
+          //alert(data.message);
+          listPage();
+          closeEditChapterPop();
+          
+          if(seq == ""){
+            $("#LECTURE_CNT").val(Number($("#LECTURE_CNT").val())+1);
+          }
+        }else{
+          alert( data.chSubjtMessage );
+          document.location.href="/ilos/pf/course/submain_form.acl";
+        }
+      }
+    },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+ 
+function editLinkPop(seq, no, link, item, device){
+  $("#LECTURE_WEEKS").val(seq);
+  $("#WEEK_NO").val(no);
+  $("#LINK_SEQ").val(link);
+  $("#ITEM_ID").val(item);
+  $("#DEVICE_DV").val(device);
+  
+  showItemList();
+}
+
+function editChapterPop(no, seq, time){
+  $("#WEEK_NO").val(no);
+  
+  $.ajax({
+    url: "/ilos/pf/course/online_chapter_pop.acl",
+    type: "POST",
+    data: { 
+      WEEK_NO : no,
+      LECTURE_WEEKS : seq,
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(html){
+        $("#editChapterPop").html(html);
+        
+        if(seq == ''){
+          $("#LECTURE_SDT").val($("#week_st_dt_"+no).val());
+          $("#LECTURE_EDT").val($("#week_ed_dt_"+no).val());
+          $("#ATTEND_DT").val($("#week_st_dt_"+no).val());
+        } 
+        
+        $("#editChapterPop").dialog("open");
+      },
+    error : function(html) {
+        alert("error:"+html);
+      }
+  });  
+}
+
+function setWeekTime(no, time, dv, id, select){
+  $.ajax({
+    url: "/ilos/pf/course/online_chapter_week_time.acl",
+    type: "POST",
+    data: { 
+      WEEK_NO : no,
+      WEEK_TIME : time,
+      ATTEND_CHK : dv,
+      SELECT_TIME : select,
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(html){
+        $("#"+id).html(html);
+      },
+    error : function(html) {
+        alert("error:"+html);
+      }
+  }); 
+}
+
+function deleteChapter(no, seq, isForce){
+  if(isForce != 'Y' && !confirm("<%=viewItem.getString("삭제?")%>")) {
+    return;
+  }
+  
+  $.ajax({
+    url: "/ilos/pf/course/online_chapter_delete.acl",
+    type: "POST",
+    data: { 
+      ud : "<%=param.getString("session.user_id")%>",
+      ky : "<%=param.getString("session.kjkey")%>",
+      LECTURE_WEEKS : seq,
+      FORCE_DV : isForce,
+      returnData : "json",      
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+      if(data.isError){
+        if(data._SEQ == ""){
+          alert(data.message);
+          pfRoomAuthCheck(data);
+        } else {
+          if(confirm(data.message)){
+            deleteChapter(no, seq, 'Y');
+          }          
+        }
+      }else{
+        if(data.isKjkey){
+          //alert(data.message);
+          listPage();
+          
+          $("#LECTURE_CNT").val(Number($("#LECTURE_CNT").val())-1);
+        }else{
+          alert( data.chSubjtMessage );
+          document.location.href="/ilos/pf/course/submain_form.acl";
+        }
+      }
+    },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function changeContent(content_id,a){
+  var e = window.event;
+  
+  if(e){
+    var target = e.target || e.srcElement;
+    if($(target).is("img")){
+      return false;
+    }
+  }
+  
+  $("#CONTENT_ID").val(content_id);
+  
+  showItemList(a);
+}
+
+function showItemList(a){
+  var content_id = $("#CONTENT_ID").val();
+  var device = $("#DEVICE_DV").val();
+  var item = $("#ITEM_ID").val();
+  
+  if(a == '1' || (content_id == '' && item == '')){
+    contentsList(1);
+  } else {
+    acl = "/ilos/pf/course/online_item_list_pop.acl";  
+    
+    $.ajax({
+      url: acl,
+      type: "POST",
+      data: {
+          DEVICE_DV : device,
+          CONTENT_ID : content_id,
+          content_id : content_id,
+          ITEM_ID : item,
+          SCH_CONTENTS : $("#SCH_CONTENTS").val()||'',
+          FORCE_DV : content_id == '' ? "" : a, // 2: 콘텐츠에서 선택해서 강제로 content_id를 바꿈
+          encoding : "utf-8"
+            },
+      async: false,
+      success: function(data){
+              if(data.message){
+                alert(data.message);
+                showItemList('1');
+              } else {
+                $("#itemPop").html(data);
+                if(device == 'P'){
+                  $("#itemPop").dialog({title : "<%=viewItem.getString("PC콘텐츠수정")%>"});
+                } else if(device == 'M'){
+                  $("#itemPop").dialog({title : "<%=viewItem.getString("SMART콘텐츠수정")%>"});
+                } else {
+                  $("#itemPop").dialog({title : "<%=viewItem.getString("콘텐츠추가")%>"});
+                }
+                
+                if(a == '1' || (content_id == '' && item == '') || device == ""){
+                  $("#itemPop").dialog({width : 900});
+                } else {
+                  $("#itemPop").dialog({width : 460});
+                }
+                
+                $("#itemPop").dialog("open");
+              }
+        },
+      error : function(html) {
+              alert("error:"+html);
+            }
+    });
+  }
+}
+
+function contentsList(start){
+  var content_id = $("#CONTENT_ID").val();
+  var device = $("#DEVICE_DV").val();
+  var item = $("#ITEM_ID").val();
+  
+  $.ajax({
+    url: '/ilos/pf/course/online_contents_list.acl',
+    type: "POST",
+    data: {
+        DEVICE_DV : device,
+        CONTENT_ID : content_id,
+        content_id : content_id,
+        ITEM_ID : item,
+        SCH_CONTENTS : $("#SCH_CONTENTS").val()||'',
+        start : start,
+        display : 11,
+        encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+            if(data.message){
+              alert(data.message);
+            } else {
+              $("#itemPop").html(data);
+              if(device == 'P'){
+                $("#itemPop").dialog({title : "<%=viewItem.getString("PC콘텐츠수정")%>"});
+              } else if(device == 'M'){
+                $("#itemPop").dialog({title : "<%=viewItem.getString("SMART콘텐츠수정")%>"});
+              } else {
+                $("#itemPop").dialog({title : "<%=viewItem.getString("콘텐츠추가")%>"});
+              }
+              
+              $("#itemPop").dialog({width : 900});
+              
+              $("#itemPop").dialog("open");
+            }
+      },
+    error : function(html) {
+            alert("error:"+html);
+          }
+  });
+}
+
+function insertItem(){
+  var LECTURE_WEEKS = $("#LECTURE_WEEKS").val();
+  var LECTURE_WEEKS_TITLE = $("#LECTURE_WEEKS_TITLE_"+LECTURE_WEEKS).text();
+  
+  if(LECTURE_WEEKS_TITLE == ""){
+    LECTURE_WEEKS_TITLE = $("#item_list_P").find("input[class='folder_chk']:checked").first().parent().find("span[class='folder_title']").text();    
+  }
+  
+  var arrItem = [];
+  
+  $("#item_list_P").find("input[class='ITEM_ID']:checked").each(function(i) {
+    var p = $(this).val();
+    var m = $("#item_list_M").find("input[class='ITEM_ID']:checked").eq(i).val()||"";
+    var mm = $(this).parent().find(".ATTEND_MIN_TM").val();
+    var ss = $(this).parent().find(".ATTEND_SEC_TM").val();
+    
+    arrItem.push(p+"|"+m+"|"+mm+"|"+ss);
+  });
+  
+  if(arrItem.length < $("#item_list_M").find("input[class='ITEM_ID']:checked").length){
+    alert('<%=viewItem.getString("모바일이PC보다많음경고")%>');
+    return;
+  }
+  
+  if(arrItem.length == 0){
+    alert('<%=viewItem.getString("콘텐츠선택경고")%>');
+    return;
+  }
+  
+  $.ajax({
+    url: "/ilos/pf/course/online_item_insert.acl",
+    type: "POST",
+    data: { 
+      ud : "<%=param.getString("session.user_id")%>",
+      ky : "<%=param.getString("session.kjkey")%>",
+      returnData : "json",      
+      LECTURE_WEEKS : LECTURE_WEEKS,
+      LECTURE_WEEKS_TITLE : LECTURE_WEEKS_TITLE,
+      ITEM_IDs : arrItem.join("^"),
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+      if(data.isError){
+        alert(data.message);
+        pfRoomAuthCheck(data);
+      }else{
+        if(data.isKjkey){
+          //alert(data.message);
+          listPage();
+          closeItemListPop();
+        }else{
+          alert( data.chSubjtMessage );
+          document.location.href="/ilos/pf/course/submain_form.acl";
+        }
+      }
+    },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function updateItem(){
+  var device = $("#DEVICE_DV").val();
+  var item = $("#item_list_"+device).find("input[class='ITEM_ID']:checked").val();
+  
+  if(item == ""){
+    alert('<%=viewItem.getString("콘텐츠선택경고")%>');
+    return;
+  }
+  
+  $.ajax({
+    url: "/ilos/pf/course/online_item_update.acl",
+    type: "POST",
+    data: { 
+      ud : "<%=param.getString("session.user_id")%>",
+      ky : "<%=param.getString("session.kjkey")%>",
+      returnData : "json",      
+      LECTURE_WEEKS : $("#LECTURE_WEEKS").val(),
+      LINK_SEQ : $("#LINK_SEQ").val(),
+      PC_ITEM_ID : device == 'P' ? item : "",
+      MOBILE_ITEM_ID : device == 'M' ? item : "",
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+      if(data.isError){
+        alert(data.message);
+        pfRoomAuthCheck(data);
+      }else{
+        if(data.isKjkey){
+          //alert(data.message);
+          listPage();
+          closeItemListPop();
+        }else{
+          alert( data.chSubjtMessage );
+          document.location.href="/ilos/pf/course/submain_form.acl";
+        }
+      }
+    },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function deleteLink(seq,no,link){
+  if(!confirm("<%=viewItem.getString("삭제?")%>")) {
+    return;
+  }
+  
+  $.ajax({
+    url: '/ilos/pf/course/online_link_delete.acl',
+    type: "POST",
+    data: { 
+      ud : "<%=param.getString("session.user_id")%>",
+      ky : "<%=param.getString("session.kjkey")%>",
+      LECTURE_WEEKS : seq,
+      LINK_SEQ : link,
+      returnData : "json",      
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+      if(data.isError){
+        alert(data.message);
+        pfRoomAuthCheck(data);
+      }else{
+        if(data.isKjkey){
+          //alert(data.message);
+          listPage();
+        }else{
+          alert( data.chSubjtMessage );
+          document.location.href="/ilos/pf/course/submain_form.acl";
+        }
+      }
+    },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function closeEditChapterPop(){
+  $("#editChapterPop").dialog("close");
+}
+
+function closeItemListPop(){
+  $("#itemPop").dialog("close");
+}
+
+function closeManageContentsPop(){
+  $("#manageContentsPop").dialog("close");
+}
+
+function updateItemSorting(obj, isChange){
+  var LECTURE_WEEKS = obj.attr('seq');
+  
+  if(LECTURE_WEEKS == ""){
+    alert('<%=viewItem.getString("정렬오류경고")%>');
+    return;
+  }
+  
+  var LINK_SEQ = [];
+  var totLINK_SEQ = "";
+  
+  obj.find("[name='LINK_SEQ']").each(function(){
+    LINK_SEQ.push($(this).val());
+  });
+  
+  totLINK_SEQ = LINK_SEQ.join("','");
+  
+  $.ajax({
+    url: "/ilos/pf/course/online_item_sorting_update.acl",
+    type: "POST",
+    data: { 
+      ud : "<%=param.getString("session.user_id")%>",
+      ky : "<%=param.getString("session.kjkey")%>",
+      LECTURE_WEEKS : LECTURE_WEEKS,
+      LINK_SEQ : totLINK_SEQ,
+      ATTEND_YN : isChange ? "Y" : "N",
+      returnData : "json",      
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+      if(data.isError){
+        alert(data.message);
+        pfRoomAuthCheck(data);
+      }else{
+        if(data.isKjkey){
+          //alert(data.message);
+          setTotalAtdTime(obj);
+        }else{
+          alert( data.chSubjtMessage );
+          document.location.href="/ilos/pf/course/submain_form.acl";
+        }
+      }
+    },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function setTotalAtdTime(obj){
+  obj = obj.parents(".content_chapter_wrap");
+  
+  if(obj.find(".content_item").length > 2){
+    var tm = [];
+    var mm = 0;
+    var ss = 0;
+    
+    obj.find(".atd_tm").each(function() {
+      if($(this).find("img").length == 0){
+        tm = $(this).text().split("<%=viewItem.getString("시간.분")%>");
+        
+        if(tm.length == 2){
+          mm += Number(tm[0].trim());
+          ss += Number(tm[1].replace("<%=viewItem.getString("시간.초")%>","").trim())||0;
+        } else if(isNaN(tm[0])){
+          ss += Number(tm[0].replace("<%=viewItem.getString("시간.초")%>","").trim());
+        } else {
+          mm += Number(tm[0].trim());
+        }
+      }
+    });
+    
+    if(mm > 0 || ss > 0){
+      mm = mm + parseInt(ss/60);
+      ss = parseInt(ss%60);
+      
+      mm = mm > 0 ? mm+"<%=viewItem.getString("시간.분")%> " : "";
+      ss = ss > 0 ? ss+"<%=viewItem.getString("시간.초")%>" : "";
+      
+      obj.find(".atd_total_tm").text(", <%=viewItem.getString("학습시간")%> : " + mm + ss);
+      obj.find(".atd_total_tm").show();
+    } else {
+      obj.find(".atd_total_tm").hide();
+    }
+  } else {
+    obj.find(".atd_total_tm").hide();
+  }
+}
+
+function targetAttendPop(no) {
+  $.ajax({
+    url: "/ilos/pf/course/online_cancel_pop.acl",
+    type: "POST",
+    data: {
+        ATTEND_NO : no,
+        LECT_CANCEL_WEEK_NO : $("#LECT_CANCEL_WEEK_NO").val(),
+        LECT_CANCEL_WEEK_TIME : $("#LECT_CANCEL_WEEK_TIME").val(),
+        encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+            $("#searchPop").html(data);
+            $("#searchPop").dialog({title : "<%=viewItem.getString("본수업선택")%>"});
+            $("#searchPop").dialog("open");
+      },
+    error : function(html) {
+            alert("error:"+html);
+          }
+  });
+}
+
+function setTargetAttend() {
+  var chk = $("#cancel_list").find("[name='CANCEL_ATTEND_NO']:checked");
+  
+  if(!chk.attr('no')){
+    alert('<%=viewItem.getString("휴강차시선택경고")%>');
+    return false;
+  }
+  
+  $("#LECT_CANCEL_WEEK_NO").val(chk.attr('no'));
+  $("#LECT_CANCEL_WEEK_TIME").val(chk.attr('time'));
+  $("#LECT_CANCEL_ATTEND_NM").html(chk.parent().find("span").html());
+  closeAttendPop();
+}
+
+function closeAttendPop() {
+  $("#searchPop").dialog("close");
+}
+
+function closeEditOrgPop() {
+  $("#editOrgPop").dialog("close");
+}
+
+function addCancelLecturePop(no) {
+  $.ajax({
+    url: "/ilos/pf/course/online_cancel_insert_pop.acl",
+    type: "POST",
+    data: { 
+      WEEK_NO : $("#WEEK_NO").val(),
+      ATTEND_NO : no,
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(html){
+        $("#cancelPop").html(html);
+        $("#cancelPop").dialog({title : "<%=viewItem.getString("휴강추가")%>"});
+        $("#cancelPop").dialog("open");
+      },
+    error : function(html) {
+        alert("error:"+html);
+      }
+  });  
+}
+
+function manageContentsPop(id, device, org){
+  $.ajax({
+    url: "/ilos/pf/course/online_manage_contents_pop.acl",
+    type: "POST",
+    data: { 
+      CONTENT_ID : id,
+      ORGANIZATION_ID : org,
+      DEVICE_DV : device,
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(html){
+        $("#manageContentsPop").html(html);
+        
+        if(id == ''){
+          $("#manageContentsPop").dialog({title : "<%=viewItem.getString("콘텐츠추가")%>"});
+        } else {
+          $("#manageContentsPop").dialog({title : "<%=viewItem.getString("콘텐츠수정")%>"});
+        }
+        
+        $("#manageContentsPop").dialog("open");
+      },
+    error : function(html) {
+        alert("error:"+html);
+      }
+  });  
+}
+
+function editOrgPop(p_org,m_org,org){
+  var content_id = $("#CONTENT_ID").val();
+  var dv = org == "" ? "1" : "2";
+  
+  $.ajax({
+    url: "/ilos/pf/course/online_organization_pop.acl",
+    type: "POST",
+    data: { 
+      content_id : content_id,
+      organization_id : org,
+      dv : dv,
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(html){
+        $("#editOrgPop").html(html);
+        
+        if(dv == '1'){
+          $("#editOrgPop").dialog({title : "<%=viewItem.getString("콘텐츠구성추가")%>"});
+        } else {
+          $("#editOrgPop").dialog({title : "<%=viewItem.getString("콘텐츠구성수정")%>"});
+        }
+        
+        $("#editOrgPop").dialog("open");
+      },
+    error : function(html) {
+        alert("error:"+html);
+      }
+  });  
+}
+
+function editOrg(device, org, dv){
+  var content_id = $("#CONTENT_ID").val();
+  
+  var pc_yn = "";
+  var mobile_yn = "";
+
+  if($("#ORGANIZATION_TITLE").val() == "") {
+    alert("<%=viewItem.getString("경고제목입력")%>");
+    $("#ORGANIZATION_TITLE").focus();
+    return false;
+  }
+
+  var pc_yn = $("#PC_YN:checked").val() == null ? "N" : $("#PC_YN:checked").val() ? "Y" : "N";
+  var mobile_yn = $("#SMART_YN:checked").val() == null ? "N" : $("#SMART_YN:checked").val() ? "Y" : "N";
+
+  if(pc_yn == "N" && mobile_yn == "N") {
+      alert("<%=viewItem.getString("경고지원기기선택알림")%>");
+      return false;
+  }
+  
+  var acl = "";
+  
+  if(dv == '1'){
+    acl = "/ilos/pf/course/online_organization_insert.acl"  
+  } else {
+    acl = "/ilos/pf/course/online_organization_update.acl"
+  }
+  
+  $.ajax({
+    url: acl,
+    type: "POST",
+    data: { 
+      ud : "<%=param.getString("session.user_id")%>",
+      ky : "<%=param.getString("session.kjkey")%>",
+      content_id : content_id,
+      organization_id : org,
+      pc_yn : pc_yn,
+      mobile_yn : mobile_yn,
+      organization_title : $("#ORGANIZATION_TITLE").val(),
+      copy_organization_id : $("#copy_org_td").find("[name='ORGANIZATION_ID']:checked").val()||"",
+      returnData : "json",      
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+      if(data.isError){
+        alert(data.message);
+        pfRoomAuthCheck(data);
+      }else{
+        if(data.isKjkey){
+          //alert(data.message);
+          showItemList();
+          closeEditOrgPop();
+        }else{
+          alert( data.chSubjtMessage );
+          document.location.href="/ilos/pf/course/submain_form.acl";
+        }
+      }
+    },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function closeLessonPop(){
+  $("#editLessonPop").dialog("close");
+}
+
+function insertLessonPop(device, org){
+  $.ajax({
+    url: "/ilos/pf/course/online_lesson_insert_pop.acl",
+    type: "POST",
+    data: { 
+      organization_id : org,
+      ORGANIZATION_ID : org,
+      content_id : $("#CONTENT_ID").val(),
+      DEVICE_DV : device,
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(html){
+        $("#editLessonPop").html(html);
+        $("#editLessonPop").dialog({title : "<%=viewItem.getString("레슨추가")%>"});
+        $("#editLessonPop").dialog("open");
+      },
+    error : function(html) {
+        alert("error:"+html);
+      }
+  });  
+}
+
+
+function insertLesson(device, org){
+  var device2 = device == "P" ? "M" : "P";
+  var org2 = $("#"+device2+"_org_list").find(".org_selected").val();
+  
+  var content_id = $("#CONTENT_ID").val();
+  var selected_id = $("#modules").attr("selected_id");
+  
+  if($("#lesson_title").val() == "") {
+    alert("<%=viewItem.getString("경고제목입력") %>");
+    return;
+  }
+  
+  var type = $("input[name=type]:checked").val();
+  var path = "";
+  var cid = "";
+  if(type == "B") {
+    if($("#lFile").val() == "") {
+      alert("<%=viewItem.getString("컨텐츠선택") %>");
+      return;
+    }
+  
+    path = $("#lFile").val();
+  }
+  else if(type == "L") {
+    if($("#link").val() == "") {
+      alert("<%=viewItem.getString("링크주소입력알림") %>");
+      return;
+    }
+    path = $("#link").val();
+  }
+  else if(type == "C") {
+    if($("#cpath").val() == "") {
+      alert("<%=viewItem.getString("커머즈파일선택알림") %>");
+      return;
+    }
+    cid = $("#cid").val();
+    path = $("#cpath").val();
+  }
+  else if(type == 'U') {
+    if($("#mainURL").val() == "" || $("#subURL").val() == "") {
+      alert("<%=viewItem.getString("링크주소입력알림") %>");
+      return;
+    }
+    path = $("#mainURL").val() +"^" + $("#subURL").val();
+  }
+  else if(type == "E") {
+    if($("#embed").val() == "") {
+      alert("<%=viewItem.getString("embed입력알림") %>");
+      return;
+    }
+    path = $("#embed").val();
+  }
+  else if(type == "D") {
+    if($("#dpath").val() == "") {
+      alert("<%=viewItem.getString("커머즈파일선택알림2") %>");
+      return;
+    }
+    cid = $("#did").val();
+    path = $("#dpath").val();
+  }
+  else if(type == "V") {
+    if($("#lesson_id").val() == "") {
+      alert("<%=viewItem.getString("강의ID입력경고")%>");
+      return;
+    }
+    if($("#lesson_item_id").val() == "") {
+      alert("<%=viewItem.getString("강의항목ID입력경고")%>");
+      return;
+    }
+    cid = $("#lesson_id").val();
+    path = $("#lesson_item_id").val();
+    var page = $("#vid").val();
+    if (!page || page == '') {
+      path = path + '-1';
+    } else {
+      path = path + '-' + page;
+    }
+  }
+  else if(type == "BNS") {
+    if($("#bnsPath").val() == "") {
+      alert("<%=viewItem.getString("컨텐츠선택안내") %>");
+      return;
+    }
+//     cid = $("#bnsCid").val();
+    path = $("#bnsPath").val();
+  }
+  if($("#attend_min_tm").val().trim() == "" && $("#attend_sec_tm").val().trim() == "") {
+    alert("<%=viewItem.getString("출석인정시간입력알림") %>");
+    $("#attend_min_tm").focus();
+    $("#attend_min_tm").select();
+    return;
+  }
+  if (isNaN($("#attend_min_tm").val())) {
+    alert("<%=viewItem.getString("시간.초입력안내") %>");
+    $("#attend_min_tm").focus();
+    $("#attend_min_tm").select();
+    return;
+  }
+  if ( !($("#attend_sec_tm").val() >= 0 && $("#attend_sec_tm").val() <= 59) || isNaN($("#attend_min_tm").val()) ) {
+    alert("<%=viewItem.getString("시간.초입력안내") %>");
+    $("#attend_sec_tm").focus();
+    $("#attend_sec_tm").select();
+    return;
+  }
+
+  $.ajax({
+    url: "/ilos/pf/course/online_lesson_insert.acl",
+    type: "POST",
+    data: { 
+      ud : "<%=param.getString("session.user_id")%>",
+      ky : "<%=param.getString("session.kjkey")%>",
+      content_id : content_id,
+      organization_id : org,
+      item_title : $("#lesson_title").val(),
+      file_path : path,
+      attend_min_tm : $("#attend_min_tm").val(),
+      attend_sec_tm : $("#attend_sec_tm").val(),
+      selected_item_id : selected_id,
+      cid : cid,
+      content_kind : type,
+      cList : $("#cList").hasClass("navi-on")? "Y" : "N",
+      cPrev : $("#cPrev").hasClass("navi-on")? "Y" : "N",
+      cNext : $("#cNext").hasClass("navi-on")? "Y" : "N",
+      cExit : "Y",
+      returnData : "json",      
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+      if(data.isError){
+        alert(data.message);
+        pfRoomAuthCheck(data);
+      }else{
+        if(data.isKjkey){
+          //alert(data.message);
+          $("#editLessonPop").html('');
+          itemList(device,org);
+          
+          if(org == org2){
+            itemList(device2,org2);  
+          }
+          
+          closeLessonPop();
+        }else{
+          alert( data.chSubjtMessage );
+          document.location.href="/ilos/pf/course/submain_form.acl";
+        }
+      }
+    },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function updateLessonPop(id, device, org){
+  $.ajax({
+    url: "/ilos/pf/course/online_lesson_update_pop.acl",
+    type: "POST",
+    data: { 
+      item_id : id,
+      ORGANIZATION_ID : org,
+      DEVICE_DV : device,
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(html){
+        $("#editLessonPop").html(html);
+        $("#editLessonPop").dialog({title : "<%=viewItem.getString("레슨수정")%>"});
+        $("#editLessonPop").dialog("open");
+      },
+    error : function(html) {
+        alert("error:"+html);
+      }
+  });  
+}
+
+function updateLesson(id, device, org){
+  var device2 = device == "P" ? "M" : "P";
+  var org2 = $("#"+device2+"_org_list").find(".org_selected").val();
+  var content_id = $("#CONTENT_ID").val();
+  
+  if($("#lesson_title").val() == "") {
+    alert("<%=viewItem.getString("경고제목입력") %>");
+    return;
+  }
+
+  var type = $("input[name=type]:checked").val();
+  var path = "";
+  var cid = "";
+  
+  if(type == "B") {
+   if($("#lFile").val() == "") {
+     alert("<%=viewItem.getString("컨텐츠선택") %>");
+     return;
+   }
+   
+   path = $("#lFile").val();
+  }
+  else if(type == "L") {
+    if($("#link").val() == "") {
+        alert("<%=viewItem.getString("링크주소입력알림") %>");
+      return;
+    }
+    path = $("#link").val();
+  }
+  else if(type == "C") {
+    if($("#cpath").val() == "") {
+        alert("<%=viewItem.getString("커머즈파일선택알림") %>");
+      return;
+    }
+    cid = $("#cid").val();
+    path = $("#cpath").val();
+  }
+  else if(type == 'U') {
+    if($("#mainURL").val() == "" || $("#subURL").val() == "") {
+      alert("<%=viewItem.getString("링크주소입력알림") %>");
+      return;
+    }
+    path = $("#mainURL").val() +"^" + $("#subURL").val();
+  }
+  else if(type == "E") {
+    if($("#embed").val() == "") {
+      alert("<%=viewItem.getString("embed입력알림") %>");
+      return;
+    }
+    path = $("#embed").val();
+  }
+  else if(type == "D") {
+    if($("#dpath").val() == "") {
+      alert("<%=viewItem.getString("커머즈파일선택알림2") %>");
+      return;
+    }
+    cid = $("#did").val();
+    path = $("#dpath").val();
+  }
+  else if(type == "V") {
+    if($("#lesson_id").val() == "") {
+      alert("<%=viewItem.getString("강의ID입력경고")%>");
+      return;
+    }
+    if($("#lesson_item_id").val() == "") {
+      alert("<%=viewItem.getString("강의항목ID입력경고")%>");
+      return;
+    }
+    cid = $("#lesson_id").val();
+    path = $("#lesson_item_id").val();
+    var page = $("#vid").val();
+    if (!page || page == '') {
+      path = path + '-1';
+    } else {
+      path = path + '-' + page;
+    }
+  }
+  else if(type == "BNS") {
+    if($("#bnsPath").val() == "") {
+      alert("<%=viewItem.getString("컨텐츠선택안내") %>");
+      return;
+    }
+//     cid = $("#bnsCid").val();
+    path = $("#bnsPath").val();
+  }
+  
+  if($("#attend_min_tm").val().trim() == "" && $("#attend_sec_tm").val().trim() == "") {
+    alert("<%=viewItem.getString("출석인정시간입력알림") %>");
+    $("#attend_min_tm").focus();
+    $("#attend_min_tm").select();
+    return;
+  }
+  if (isNaN($("#attend_min_tm").val())) {
+    alert("<%=viewItem.getString("시간.초입력안내") %>");
+    $("#attend_min_tm").focus();
+    $("#attend_min_tm").select();
+    return;
+  }
+  if ( !($("#attend_sec_tm").val() >= 0 && $("#attend_sec_tm").val() <= 59) || isNaN($("#attend_min_tm").val()) ) {
+    alert("<%=viewItem.getString("시간.초입력안내") %>");
+    $("#attend_sec_tm").focus();
+    $("#attend_sec_tm").select();
+    return;
+  }
+  
+  $.ajax({
+    url: "/ilos/pf/course/online_lesson_update.acl",
+    type: "POST",
+    data: { 
+      ud : "<%=param.getString("session.user_id")%>",
+      ky : "<%=param.getString("session.kjkey")%>",
+      content_id : content_id,
+      organization_id : org,
+      item_title : $("#lesson_title").val(),
+      file_path : path,
+      attend_min_tm : $("#attend_min_tm").val(),
+      attend_sec_tm : $("#attend_sec_tm").val(),
+      cid : cid,
+      content_kind : type,
+      comptb_yn : (document.getElementById('chk_compatible').checked ? "Y" : "N"),
+      cList : $("#cList").hasClass("navi-on")? "Y" : "N",
+      cPrev : $("#cPrev").hasClass("navi-on")? "Y" : "N",
+      cNext : $("#cNext").hasClass("navi-on")? "Y" : "N",
+      cExit : "Y",
+      item_id : id,
+      returnData : "json",      
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+      if(data.isError){
+        alert(data.message);
+        pfRoomAuthCheck(data);
+      }else{
+        if(data.isKjkey){
+          //alert(data.message);
+          $("#editLessonPop").html('');
+          itemList(device,org);
+
+          if(org == org2){
+            itemList(device2,org2);  
+          }
+          
+          closeLessonPop();
+        }else{
+          alert( data.chSubjtMessage );
+          document.location.href="/ilos/pf/course/submain_form.acl";
+        }
+      }
+    },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function deleteLesson(id, device, org){
+  if(!confirm("<%=viewItem.getString("삭제?")%>")) {
+    return;
+  }
+  
+  var device2 = device == "P" ? "M" : "P";
+  var org2 = $("#"+device2+"_org_list").find(".org_selected").val();
+  var content_id = $("#CONTENT_ID").val();
+  
+  $.ajax({
+    url: "/ilos/pf/course/online_lesson_delete.acl",
+    type: "POST",
+    data: { 
+      ud : "<%=param.getString("session.user_id")%>",
+      ky : "<%=param.getString("session.kjkey")%>",
+      content_id : content_id,
+      organization_id : org,
+      item_ids : id,
+      returnData : "json",      
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+      if(data.isError){
+        alert(data.message);
+        pfRoomAuthCheck(data);
+      }else{
+        if(data.isKjkey){
+          itemList(device,org);
+          
+          if(org == org2){
+            itemList(device2,org2);  
+          }
+          
+          closeLessonPop();
+        }else{
+          alert( data.chSubjtMessage );
+          document.location.href="/ilos/pf/course/submain_form.acl";
+        }
+      }
+    },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function deleteOrg(org){
+  var content_id = $("#CONTENT_ID").val();
+  
+  if(!confirm("<%=viewItem.getString("삭제?")%>")) {
+    return;
+  }
+  
+  $.ajax({
+    url: "/ilos/pf/course/online_organization_delete.acl",
+    type: "POST",
+    data: { 
+      ud : "<%=param.getString("session.user_id")%>",
+      ky : "<%=param.getString("session.kjkey")%>",
+      content_id : content_id,
+      organization_id : org,
+      returnData : "json",      
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+      if(data.isError){
+        alert(data.message);
+        pfRoomAuthCheck(data);
+      }else{
+        if(data.isKjkey){
+          //alert(data.message);
+          showItemList();
+        }else{
+          alert( data.chSubjtMessage );
+          document.location.href="/ilos/pf/course/submain_form.acl";
+        }
+      }
+    },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function modifyContents(seq){
+  var acl = '';
+  
+  if(seq == ''){
+    acl="/ilos/pf/course/online_contents_insert.acl";
+  } else {
+    acl="/ilos/pf/course/online_contents_update.acl";
+  }
+
+  if($.trim($("#content_title").val()) == "") {
+    alert("<%=viewItem.getString("경고제목입력")%>");
+    $("#content_title").focus();
+    return false;
+  }
+  
+  if($("#sdate").val() == "") {
+    alert("<%=viewItem.getString("저작일확인")%>");
+    $("#sdate").focus();
+    return false;
+  }
+
+  document.myForm.target = "hidden";
+  document.myForm.action = acl;
+  document.myForm.submit();
+}
+
+function deleteContents(id, device, org){
+  if(!confirm("<%=viewItem.getString("삭제?")%>")) {
+    return;
+  }
+  
+  $.ajax({
+    url: "/ilos/pf/course/online_contents_delete.acl",
+    type: "POST",
+    data: { 
+      ud : "<%=param.getString("session.user_id")%>",
+      ky : "<%=param.getString("session.kjkey")%>",
+      content_id : id,
+      returnData : "json",      
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+      if(data.isError){
+        alert(data.message);
+        pfRoomAuthCheck(data);
+      }else{
+        if(data.isKjkey){
+          //alert(data.message);
+          showItemList('1');
+        }else{
+          alert( data.chSubjtMessage );
+          document.location.href="/ilos/pf/course/submain_form.acl";
+        }
+      }
+    },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function fileManagePop(){
+  $.ajax({
+    url: "/ilos/pf/course/online_file_pop.acl",
+    type: "POST",
+    data: { 
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(html){
+        $("#filePop").html(html);
+        $("#filePop").dialog("open");
+      },
+    error : function(html) {
+        alert("error:"+html);
+      }
+  });  
+}
+
+function uploadFilePop(){
+  var currPath = $(".file-nav:last-child").attr("path");
+  document.uploadForm.reset();
+  
+  $( "#dialog4" ).dialog( "open" );
+}
+
+function makeFolderPop(){
+  var currPath = $(".file-nav:last-child").attr("path");
+  $( "#dialog5" ).dialog( "open" );
+}
+
+function makeFolder(){
+  if($("#folderName").val() == "") {
+    alert("<%=viewItem.getString("폴더명입력") %>");
+    return;
+  }
+
+  var currPath = $(".file-nav:last-child").attr("path");
+    
+
+  //folderName <- 폴더명 입력
+  $.ajax({
+    url: "/ilos/pf/contents/contents2_file_create_folder.acl",
+    type: "POST",
+    data: { 
+      folderName : $("#folderName").val(),
+      path : currPath,
+      alias : $("#server").val(),
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+            if(data.isError) {
+              alert(data.message);
+            }
+            else {
+              reloadFolder();
+              $("#folderName").val("");//초기화  
+              $( "#dialog5" ).dialog( "close" );
+            }
+      },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function selectFile(){
+  var t = true;
+  var content_id = $("#CONTENT_ID").val();
+  $("#files > .ui-selected").each( function() {
+    if($(this).hasClass("file-choice")) {
+      if(t) {
+        var path = decodeURIComponent($(this).find("div>span").attr("path"));
+        path = path.substring(path.indexOf("=")+1);
+        $("#lFile").val("/"+$("#server").val()+"/"+content_id+""+path);
+        setContentsDuration($(this).find("div>span").attr("flink"));
+        $("#filePop").dialog("close");
+        t = false;
+      }
+    }
+  });
+}
+
+function setContentsDuration(src){
+  var test_canvas = document.createElement("canvas");
+  var html5_check = (test_canvas.getContext) ? true : false
+
+  if(html5_check && src != '' && src.substring(src.lastIndexOf('.'), src.legnth).toLowerCase() == '.mp4' && $("#attend_min_tm").val() == '' && $("#attend_sec_tm").val() == ''){
+    var video = document.getElementById('hidden_video');
+    video.src = src;
+    video.load();
+    
+    video.addEventListener('durationchange', function() {
+      var time = video.duration;
+      
+      if(time != '' && !isNaN(time) && $("#attend_min_tm").val() == '' && $("#attend_sec_tm").val() == ''){
+        $("#attend_min_tm").val(Math.floor(Number(time)/60));
+        $("#attend_sec_tm").val(Math.floor(Number(time)%60));
+      }    
+    });
+  }
+}
+
+function openFile(){
+  var file = "";
+  var a = "";
+  var path = "";
+  var url = "";
+  $("#files > .ui-selected").each( function() {
+      if($(this).find("div>img").attr("src").indexOf("1.png") < 0) {
+        file = $(this);
+        a = decodeURIComponent($(this).find("div>span").attr("path"));
+        url = a.substring(0, a.indexOf("?"));
+        path = a.substring(a.lastIndexOf("=")+1);
+      }
+    }); 
+  
+  if(file.hasClass("file-path")) {
+    if(path == "") {
+      alert("<%=viewItem.getString("파일선택") %>");
+      return;
+    }
+
+    $.ajax({
+      url: url,
+      type: "POST",
+      data: { 
+        alias : $("#server").val(),
+        path : path,
+        encoding : "utf-8"
+            },
+      async: false,
+      success: function(data){
+              $("#files").html(data);
+        },
+      error : function(html) {
+              alert("error:"+html);
+        }
+    }); 
+  } else {
+    selectFile();
+  }
+}
+
+function downloadFile(){
+  var currPath = $(".file-nav:last-child").attr("path");
+ 
+  //선택된 폴더 및 파일 목록화작업 시작
+  var files = "";
+  $("#files > .ui-selected").each( function() {
+    if($(this).find("div>img").attr("src").indexOf("1.png") < 0) {
+      var path = decodeURIComponent($(this).find("div>span").attr("path"));
+      path = path.substring(path.lastIndexOf("=")+1);
+      files += "|"+path;
+    }
+  });
+
+  if(files != "") files = files.substring(1);
+  else {
+    alert("<%=viewItem.getString("파일선택") %>");
+    return;
+  }
+
+  //압축합니다.
+  $.ajax({
+    url: "/ilos/pf/contents/contents2_file_compress.acl",
+    type: "POST",
+    data: { 
+      path : currPath,
+      alias : $("#server").val(),
+      files : files,
+      encoding : "utf-8"
+    },
+    async: false,
+    success: function(data){
+            if(data.isError) {
+              alert(data.message);
+            }
+            else {
+              downloadForm.file.value = data.zipfile;
+              downloadForm.target = "hidden";
+              downloadForm.submit();  
+            }
+    },
+    error : function(html) {
+            alert("error:"+html);
+    },
+    complete : function(data) {
+    }
+  });    
+}
+
+function renameFilePop(){
+  var currPath = $(".file-nav:last-child").attr("path");
+
+  var file = "";
+  var t = true;
+  var type = "";
+  $("#files > .ui-selected").each( function() {
+    if($(this).find("div>img").attr("src").indexOf("1.png") < 0) {
+      type = decodeURIComponent($(this).find("div>span").attr("ftype"));
+      var path = decodeURIComponent($(this).find("div>span").attr("path"));
+      file = path.substring(path.lastIndexOf("=")+1);
+    }
+  }); 
+
+  if(file == "") {
+    alert("<%=viewItem.getString("파일선택") %>");
+    return;
+  }
+
+  file = file.substring(file.lastIndexOf("/")+1);
+  var ext = "";
+  if(type == '3'){
+    ext = file.substring(file.lastIndexOf("."));
+    file = file.replace(ext, "");    
+  }
+  $("#dialog7").dialog("open");
+  $("#newfile").attr("source", file+ext);
+  $("#newfile").val(file);
+  $("#newfile_ext").html(ext);
+}
+
+function renameFile(){
+  if($("#newfile").val() == "") {
+    alert("<%=viewItem.getString("파일명입력") %>");
+    return;
+  }
+
+  var currPath = $(".file-nav:last-child").attr("path");        
+
+  //folderName <- 폴더명 입력
+  $.ajax({
+    url: "/ilos/pf/contents/contents2_file_rename.acl",
+    type: "POST",
+    data: { 
+      target : $("#newfile").val() + $("#newfile_ext").html(),
+      source : $("#newfile").attr("source"),
+      path : currPath,
+      alias : $("#server").val(),
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+            if(data.isError) {
+              alert(data.message);
+            }
+            else {
+              reloadFolder();
+              $( "#dialog7" ).dialog( "close" );
+            }
+      },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function moveFilePop(){
+  var currPath = $(".file-nav:last-child").attr("path");
+
+  //선택된 폴더 및 파일 목록화작업 시작
+  var files = "";
+  $("#files > .ui-selected").each( function() {
+    if($(this).find("div>img").attr("src").indexOf("1.png") < 0) {
+      var path = decodeURIComponent($(this).find("div>span").attr("path"));
+      path = path.substring(path.lastIndexOf("=")+1);
+      files += "|"+path;
+    }
+  });
+
+  if(files != "") files = files.substring(1);
+  else {
+    alert("<%=viewItem.getString("파일선택") %>");
+    return;
+  }
+
+  $( "#dialog6" ).dialog( "option", "title", "<%=viewItem.getString("파일이동") %>" );
+  $( "#dialog6" ).dialog( "open" );
+  reloadFolder2();
+}
+
+function copyFilePop(){
+  var currPath = $(".file-nav:last-child").attr("path");
+
+  //선택된 폴더 및 파일 목록화작업 시작
+  var files = "";
+  $("#files > .ui-selected").each( function() {
+    if($(this).find("div>img").attr("src").indexOf("1.png") < 0) {
+      var path = decodeURIComponent($(this).find("div>span").attr("path"));
+      path = path.substring(path.lastIndexOf("=")+1);
+      files += "|"+path;
+    }
+  });
+
+  if(files != "") files = files.substring(1);
+  else {
+    alert("<%=viewItem.getString("파일선택") %>");
+    return;
+  }
+
+  $( "#dialog6" ).dialog( "option", "title", "<%=viewItem.getString("파일복사") %>" );
+  $( "#dialog6" ).dialog( "open" );
+  reloadFolder2();
+}
+
+function moveFile(){
+  //선택된 폴더 및 파일 목록화작업 시작
+  var target = "";
+  $("#files2 > .ui-selected2").each( function() {
+    if($(this).find("div>img").attr("src").indexOf("1.png") < 0) {
+      var path = decodeURIComponent($(this).find("div>span").attr("path"));
+      target = path.substring(path.lastIndexOf("=")+1);
+    }
+  });
+
+  if(target == "") {
+    target = $(".file-nav2:last-child").attr("path");
+  }
+
+  //대상 폴더나 파일
+  var flag = false;
+  var files = "";
+  var tPath = target.split("/");
+  $("#files > .ui-selected").each( function() {
+    if($(this).find("div>img").attr("src").indexOf("1.png") < 0) {
+      var path = decodeURIComponent($(this).find("div>span").attr("path"));
+      path = path.substring(path.indexOf("=")+1);
+
+      files += "|" + path;
+      var sPath = path.split("/");
+      var ck = 0;
+      for(; ck < sPath.length; ck++) {
+          if(sPath[ck] != tPath[ck]) break;
+      }
+      if(ck == sPath.length) flag = true;
+    }
+  });
+
+  if(flag && $("#dialog6").dialog("option", "title") == "<%=viewItem.getString("파일이동") %>") {
+      alert("<%=viewItem.getString("경고부모폴더이동불가")%>");
+      return;
+  }
+
+  if(files != "") files = files.substring(1); 
+
+  //reload 할 폴더
+  var currPath = $(".file-nav:last-child").attr("path");
+  
+  var acl = "/ilos/pf/contents/contents2_file_copy.acl";
+  if($("#dialog6").dialog("option", "title") == "<%=viewItem.getString("파일이동") %>") acl = "/ilos/pf/contents/contents2_file_move.acl"; 
+  
+  $.ajax({
+    url: acl,
+    type: "POST",
+    data: { 
+      target : target,
+      files : files,
+      path : currPath,
+      alias : $("#server").val(),
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+              if(data.isErorr) alert(data.message);
+              else {
+                  reloadFolder();
+                  $("#dialog6").dialog( "close" );
+              }
+      },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  }); 
+}
+
+function deleteFile(){
+  var currPath = $(".file-nav:last-child").attr("path");
+    
+  //선택된 폴더 및 파일 목록화작업 시작
+  var files = "";
+  $("#files > .ui-selected").each( function() {
+    if($(this).find("div>img").attr("src").indexOf("1.png") < 0) {
+      var path = decodeURIComponent($(this).find("div>span").attr("path"));
+      path = path.substring(path.lastIndexOf("=")+1);
+      files += "|"+path;
+    }
+  }); 
+
+  if(files != "") files = files.substring(1);
+  else {
+      alert("<%=viewItem.getString("파일선택") %>");
+      return;
+  }
+
+  if(!confirm("<%=viewItem.getString("파일삭제?")%>")) {
+    return;
+  }
+    
+  $.ajax({
+    url: "/ilos/pf/contents/contents2_file_delete.acl",
+    type: "POST",
+    data: { 
+      files : files,
+      path : currPath,
+      alias : $("#server").val(),
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+            if(data.isErorr) alert(data.message);
+            else reloadFolder();
+      },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function loadingStart(){
+  var _x = 0;
+  _x = ( $("body").width() - $("#loading img").width() ) / 2 ; 
+  $("#loading img").css("left", _x + "px");
+  
+  $("#loading").show();
+}
+function loadingStop(){
+  $("#loading").hide();
+} 
+
+function reloadFolder() {
+  $.ajax({
+    url: "/ilos/pf/contents/contents2_file_list.acl",
+    type: "POST",
+    data: { 
+      path : $(".file-nav:last-child").attr("path"), 
+      alias : $("#server").val(),
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+            $("#files").html(data);
+      },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function reloadFolder2() {
+  $.ajax({
+    url: "/ilos/pf/contents/contents2_file_list2.acl",
+    type: "POST",
+    data: { 
+      path : $(".file-nav2:last-child").attr("path"), 
+      alias : $("#server").val(),
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+            $("#files2").html(data);
+      },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function dialog4Close() {
+  $( "#dialog4" ).dialog("close");
+}
+
+function updateTimeForm(obj, link){
+  var span = obj.find(".atd_tm");
+  var input = obj.find(".edit_tm");
+  var tm = [];
+  var min = 0;
+  var sec = 0;
+  var focus = "m";
+  
+  if(span.css("display") == "none") return;
+  
+  obj.removeClass("site-mouseover-color");
+  
+  if(span.find("img").length == 0){
+    tm = span.text().split("<%=viewItem.getString("시간.분")%>");
+    
+    if(tm.length == 2){
+      min = Number(tm[0].trim());
+      sec = Number(tm[1].replace("<%=viewItem.getString("시간.초")%>","").trim())||0;
+    } else if(isNaN(tm[0])){
+      min = 0;
+      sec = Number(tm[0].replace("<%=viewItem.getString("시간.초")%>","").trim());
+      focus = "s";
+    } else {
+      min = Number(tm[0].trim());
+      sec = 0;
+    }
+  } 
+  
+  input.find("[name='ATTEND_MIN_TM']").val(min);
+  input.find("[name='ATTEND_SEC_TM']").val(sec);
+  
+  input.css("display","inline-block");
+  
+  if(focus == "s") input.find("[name='ATTEND_SEC_TM']").focus();
+  else input.find("[name='ATTEND_MIN_TM']").focus();
+  
+  span.hide();
+  
+  $(document).off("click.edit_tm"+link);
+  $(document).on("click.edit_tm"+link, function(e){
+    if($(e.target).is(obj) || $(e.target).is(obj.find('*'))) return;
+    updateTime(obj, link);
+  });
+}
+
+function isNumber(obj,e){
+  if ((getKeyCode(e) == 13) || // Enter key
+      (getKeyCode(e) == 9) // tab key 
+      ){
+    if(obj.attr("name") == "ATTEND_MIN_TM"){
+      obj.parent().find("[name='ATTEND_SEC_TM']").focus();
+    } else {
+      $(document).click();   
+    }
+    return false;
+  } else if (getKeyCode(e) == 27){ // Escape key
+    obj = obj.parents(".content_item_device");
+    
+    obj.find("input").val("");
+    obj.find(".edit_tm").hide();
+    obj.find(".atd_tm").show();
+    obj.addClass("site-mouseover-color");
+    
+    $(document).off("click.edit_tm"+obj.parent().find("input[name='LINK_SEQ']").val());
+  }
+
+  if ( (getKeyCode(e) == 46) ||  // DEL
+      (getKeyCode(e) == 8)  ||  // backspace
+      (getKeyCode(e) == 9)  ||  // tab
+      (getKeyCode(e) == 37) ||  // ← key
+      (getKeyCode(e) == 38) ||  // ↑ key
+      (getKeyCode(e) == 39) ||  // → key
+      (getKeyCode(e) == 40) ||  // ↓ key
+      (getKeyCode(e) == 35) ||  // HOME key
+      (getKeyCode(e) == 36) ||  // END key
+      (getKeyCode(e) == 13) ||  // Enter key
+      
+      ( (getKeyCode(e) >= 48) && (getKeyCode(e) <= 57 ) ) || // 0 ~ 9
+      ( (getKeyCode(e) >= 96) && (getKeyCode(e) <= 105 ) )   // 0 ~ 9 in 숫자패드
+    )
+   return true;
+  else
+   return false;
+}
+  
+function updateTime(obj,link){
+  var lecture_weeks = obj.parents(".content_item_wrap").attr('seq');
+  var span = obj.find(".atd_tm");
+  var input = obj.find(".edit_tm");
+  var min = input.find("[name='ATTEND_MIN_TM']").val().trim();
+  var sec = input.find("[name='ATTEND_SEC_TM']").val().trim();
+  
+  if(min == '' && sec == ''){
+    alert('<%=viewItem.getString("최소출석입력경고")%>');
+    input.find("[name='ATTEND_MIN_TM']").focus();
+  } else if(isNaN(min)){
+    alert('<%=viewItem.getString("경고숫자입력")%>');
+    input.find("[name='ATTEND_MIN_TM']").focus();
+  } else if(isNaN(sec)){
+    alert('<%=viewItem.getString("경고숫자입력")%>');
+    input.find("[name='ATTEND_SEC_TM']").focus();
+  } else if(sec != "" && (sec < 0 || sec > 59)){
+    alert('<%=viewItem.getString("시간.초입력안내")%>');
+    input.find("[name='ATTEND_SEC_TM']").focus();
+  } else {
+    if(min == '' || min < 0){
+      min = 0;
+    }
+    
+    if(sec == '' || sec < 0){
+      sec = 0;
+    }
+    
+    min = Number(min);
+    sec = Number(sec);
+    
+    var tm = [];
+    var org_min = 0;
+    var org_sec = 0;
+    
+    if(span.find("img").length == 0){
+      tm = span.text().split("<%=viewItem.getString("시간.분")%>");
+      
+      if(tm.length == 2){
+        org_min = Number(tm[0].trim());
+        org_sec = Number(tm[1].replace("<%=viewItem.getString("시간.초")%>","").trim())||0;
+      } else if(isNaN(tm[0])){
+        org_min = 0;
+        org_sec = Number(tm[0].replace("<%=viewItem.getString("시간.초")%>","").trim());
+      } else {
+        org_min = Number(tm[0].trim());
+        org_sec = 0;
+      }
+    } 
+    
+    if(org_min == min && org_sec == sec){
+      obj.find("input").val("");
+      obj.find(".edit_tm").hide();
+      obj.find(".atd_tm").show();
+      obj.addClass("site-mouseover-color");
+      $(document).off("click.edit_tm"+link);
+      
+      return false;
+    }
+    
+    $.ajax({
+      url: '/ilos/pf/course/online_link_time_update.acl',
+      type: "POST",
+      data: { 
+        ud : "<%=param.getString("session.user_id")%>",
+        ky : "<%=param.getString("session.kjkey")%>",
+        LECTURE_WEEKS : lecture_weeks,
+        LINK_SEQ : link,
+        ATTEND_MIN_TM : min,
+        ATTEND_SEC_TM : sec,
+        returnData : "json",      
+        encoding : "utf-8"
+            },
+      async: false,
+      success: function(data){
+        if(data.isError){
+          alert(data.message);
+          pfRoomAuthCheck(data);
+        }else{
+          if(data.isKjkey){
+            //alert(data.message);
+            var text = "";
+            
+            if(min > 0 || sec > 0){
+              if(min > 0){
+                text = min+"<%=viewItem.getString("시간.분")%> ";
+              }
+              
+              if(sec > 0){
+                text += sec+"<%=viewItem.getString("시간.초")%>";
+              }  
+            } else {
+              text = '<img src="/ilos/images/themes/<%=styleColor %>/check.png">';
+            }
+            
+            span.html(text);
+            
+            input.hide();
+            span.show();
+            obj.addClass("site-mouseover-color");
+            $(document).off("click.edit_tm"+link);
+            
+            setTotalAtdTime(obj);
+            
+            if(data._SEQ && confirm("<%=viewItem.getString("경고출석인정시간수정")%>")){
+              updateContentsTime(data._SEQ, min, sec);
+            }
+          }else{
+            alert( data.chSubjtMessage );
+            document.location.href="/ilos/pf/course/submain_form.acl";
+          }
+        }
+      },
+      error : function(html) {
+              alert("error:"+html);
+        }
+    });
+  }
+}
+
+function updateContentsTime(seq, min, sec){
+  $.ajax({
+    url: '/ilos/pf/course/online_link_time_update2.acl',
+    type: "POST",
+    data: { 
+      ud : "<%=param.getString("session.user_id")%>",
+      ky : "<%=param.getString("session.kjkey")%>",
+      ITEM_ID : seq,
+      ATTEND_MIN_TM : min,
+      ATTEND_SEC_TM : sec,
+      returnData : "json",      
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+      if(data.isError){
+        alert(data.message);
+        pfRoomAuthCheck(data);
+      }else{
+        if(data.isKjkey){
+          //alert(data.message);
+        }else{
+          alert( data.chSubjtMessage );
+          document.location.href="/ilos/pf/course/submain_form.acl";
+        }
+      }
+    },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function goContentsLink(){
+  <%if("Y".equals(rdInfo.getString("ATD_YN"))){%>
+  alert('<%=viewItem.getString("오프라인출석존재경고")%>');
+  return;
+  <%} else {%>
+  if($("#LECTURE_CNT").val() > 0){
+    alert('<%=viewItem.getString("등록차시경고")%>');
+    return;
+  } else {
+    document.location.href='/ilos/pf/course/online_batch_link_form.acl'    
+  }
+  <%}%>
+}
+
+function goPreview(seq){
+  var e = window.event;
+  
+  if(e){
+    var target = e.target || e.srcElement;
+    if($(target).parents('.content_chapter_wrap').find('.content_item').length < 2){
+      alert('<%=viewItem.getString("등록콘텐츠없음경고")%>');
+      return false;
+    }
+  }
+  
+  var week = $(".week_list").find("td[class='selected_week']").text();
+  
+  if(isNaN(week) || !week){
+    week = "";
+  }
+  
+  document.location.href='/ilos/pf/course/online_preview_form.acl?lecture_weeks='+seq+'&w='+week;
+}
+
+function goProgress(){
+  if($("#LECTURE_CNT").val() > 0){
+    document.location.href='/ilos/pf/course/online_progress_list_form.acl';    
+  } else {
+    alert('<%=viewItem.getString("등록차시없음경고")%>');
+    return;
+  }
+}
+</script>
+</head>
+ 
+<body>
+<%@ include file="/WEB-INF/jsp/inc/skip.jsp" %>
+<div id="wrap">
+  <div id="headerWrap">
+    <%@ include file="/WEB-INF/jsp/inc/header.jsp" %> 
+    <%@ include file="/WEB-INF/jsp/inc/gnb.jsp" %>
+  </div>
+  <div id="containerWrap">
+    <div id="container">
+      <%@ include file="/WEB-INF/jsp/inc/lnb_professor.jsp" %>
+      <div id="contents">
+        <h2>본문 내용</h2>
+        <div id="content_location">
+          <div class="locationmap" > 
+            <span class="hide">현재 본문 위치 :</span>
+            <a href="/ilos/main/main_form.acl"><img src="/ilos/images/common/bul/icon_home.png" class="home" alt="<%=viewItem.getString("홈") %>" title="<%=viewItem.getString("홈") %>"></a><img src="/ilos/images/common/bul/icon_arrow.gif" alt=">"><a href="/ilos/pf/course/submain_form.acl"><%=param.getString("session.kj_subjt_nm_"+EtcUtil.getLocate(viewItem)) %></a><img src="/ilos/images/common/bul/icon_arrow.gif" alt=">"><strong><a href="/ilos/pf/course/online_list_form.acl?acl=online_list_form.acl&s=menu"><%=viewItem.getString("강의주차관리") %></a></strong><%if(menual){ %><span>&nbsp;</span><img src="/ilos/images/themes/<%=styleColor %>/menual.png" onclick="menualPop('/pf/course/online_view_form.acl','500','강의주차관리','2');" style="cursor: pointer; margin-right: 0px; margin-left: 0px; margin-bottom: 10px;" /><%}%>
+          </div>
+          <h3 class="toptitle"><%=viewItem.getString("강의주차관리") %></h3>
+        </div>
+        <!-- Start Edit -->
+        <div id="content_text">
+          <input type="hidden" id="WEEK_NO" value="">
+          <input type="hidden" id="CONTENT_ID" value="<%=rdInfo.getString("CONTENT_ID")%>">
+          <input type="hidden" id="LECTURE_WEEKS" value="">
+          <input type="hidden" id="LINK_SEQ" value="">
+          <input type="hidden" id="ITEM_ID" value="">
+          <input type="hidden" id="DEVICE_DV" value="">
+          <input type="hidden" id="LECTURE_CNT" value="<%=rdInfo.getString("LECTURE_CNT")%>">
+          
+          <!-- [S]Button -->
+          <div class="bbs-lbutton02" style="overflow: hidden;">
+            <div style="float: left;">
+              <span class="button large icon">
+                <button type="button" onclick="goProgress();">
+                  <img src="/ilos/images/common/btn_icon.gif"> <%=viewItem.getString("B.진도율보기") %>
+                </button>
+              </span>
+            </div>
+            <div style="float: right;">
+              <span class="button large icon">
+                <button type="button" onclick="goContentsLink();">
+                  <img src="/ilos/images/common/btn_icon.gif"> <%=viewItem.getString("콘텐츠일괄연결") %>
+                </button>
+              </span>
+              <%if(!"1".equals(param.getString("session.kj_lect_type"))) {%>
+              <span class="button large icon">
+                <button type="button" onclick="location.href='/ilos/pf/course/online_replace_list_form.acl'">
+                  <img src="/ilos/images/common/btn_icon.gif"> <%=viewItem.getString("온라인강의") %> <%=viewItem.getString("출석대체자관리") %>
+                </button>
+              </span>
+              <%} %>
+            </div>
+          </div>
+          <!-- [E]Button -->
+          
+          <table class="week_list">
+            <colgroup>
+              <col style="width: <%=100.0/(dc.size()+1)%>%;" span="<%=dc.size()+1%>">
+            </colgroup>
+            <tbody>
+              <tr>
+                <td class="<%="".equals(param.getString("w")) ? "selected_week" : ""%>" onclick="changeWeek($(this));">All</td>
+                <%for(int i = 0; i < dc.size(); i++) {%>
+                <td class="<%=dc.getRecord(i).getString("WEEK_NO").equals(param.getString("w")) ? "selected_week" : ""%>" onclick="changeWeek($(this));"><%=dc.getRecord(i).getString("WEEK_NO") %></td>
+                <%} %>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div id="online_list_container"></div>
+          
+        </div>
+        <!-- //End Edit -->
+        <div class="hide-quicktop" id="hide-quicktop"><a href="#skipNavigation">건너뛰기 메뉴 바로가기</a></div>
+      </div>
+    </div>
+  </div>
+  <div id="footerWrap02">
+    <%@ include file="/WEB-INF/jsp/inc/footer_professor.jsp" %>
+  </div>
+</div>
+
+<div id="editChapterPop"></div>
+<div id="itemPop"></div>
+<div id="searchPop"></div>
+<div id="manageContentsPop"></div>
+<div id="editOrgPop"></div>
+<div id="editLessonPop"></div>
+<div id="cancelPop"></div>
+<div id="historyPop"></div>
+
+<%-- +++++++++++++++++++++++ 파일 창 +++++++++++++++++++++++++++++ --%>
+<div id="contextMenu">
+  <ul>
+    <li class="contextOpt fileSelect" onmouseup="openFile();"><%=viewItem.getString("열기") %></li>
+    <li class="contextOpt fileSelect" onmouseup="downloadFile();"><%=viewItem.getString("받기") %></li>
+    <li class="contextOpt fileSelect" onmouseup="renameFilePop();"><%=viewItem.getString("이름바꾸기") %></li>   
+    <li class="contextOpt fileSelect" onmouseup="moveFilePop();"><%=viewItem.getString("파일이동") %></li>
+    <li class="contextOpt fileSelect" onmouseup="copyFilePop();"><%=viewItem.getString("파일복사") %></li>
+    <li class="contextOpt fileSelect" onmouseup="deleteFile();"><%=viewItem.getString("삭제") %></li>
+    <li class="contextLine fileSelect"></li>
+    <li class="contextOpt" onmouseup="uploadFilePop();"><%=viewItem.getString("B.업로드") %></li>
+    <li class="contextOpt" onmouseup="makeFolderPop();"><%=viewItem.getString("B.새폴더") %></li>
+  </ul>
+</div>
+
+<div id="filePop" title="<%=viewItem.getString("파일찾기") %>" bgproperties="fixed" oncontextmenu="return false"></div>
+
+<%-- +++++++++++++++++++++++ 파일업로드 +++++++++++++++++++++++++++++ --%>
+<div id="dialog4" title="<%=viewItem.getString("파일업로드") %>" style="display:none;">
+  <form id="uploadForm" name="uploadForm" action="/ilos/pf/contents/contents2_file_upload.acl" method="POST" enctype="multipart/form-data" style="position: relative;">
+    <div style="clear:both;border:1px solid #dadada;overflow:hidden;">
+      <div style="margin:10px 10px 10px 10px;"><%=viewItem.getString("컨텐츠업로드메세지") %></div>
+      <div style="margin:10px 10px 10px 10px;">
+         
+      <input name="path" value="" type="hidden">
+      <input name="alias" value="" type="hidden">
+      <input type="file" class="txttype02" name="file" style="width:290px;" />
+         
+      </div>
+    </div>
+    <div class="progress" style="position: absolute; width: 100%; display: none;">
+      <div style="background-color: #DADADA;">
+        <div class="bar" style="height: 8px; margin-top: 3px; background: url('/ilos/images/common/pbar-ani.gif');"></div>
+      </div>
+      <div style="text-align: right; font-size: 8pt; margin-top: 2px;">
+        <span class="curByte" style="font-weight: bold;"></span> / <span class="totByte"></span>&nbsp;(<span class="percent"></span>)
+      </div>
+      <div id="status" style="display: none;"></div>
+    </div>
+    <div style="text-align: center; margin-top: 30px;">
+      <input type="submit" id="uploadFile" value="<%=viewItem.getString("B.업로드") %>" style="padding: 5px 10px;">
+      <button id="uploadCancelBtn" style="display: none; padding: 5px 10px;" onclick="return false;"><%=viewItem.getString("B.취소") %></button>
+      <button id="processing" style="display: none; padding: 5px 10px;" onclick="return false;" disabled><%=viewItem.getString("처리중") %></button>
+    </div>
+  </form>
+</div>
+
+
+<%-- +++++++++++++++++++++++ 새폴더 +++++++++++++++++++++++++++++ --%>
+   
+<div id="dialog5" title="<%=viewItem.getString("새폴더") %>" style="display:none;">
+   <div style="clear:both;border:1px solid #dadada;overflow:hidden;">
+     <div style="margin:10px 10px 10px 10px;"><%=viewItem.getString("폴더명") %></div>
+     <div style="margin:10px 10px 10px 10px;">
+       <input type="text" id="folderName" class="txttype02" style="width:280px;" />
+     </div>
+   </div>
+   
+   <!-- [S]Button -->
+   <div class="bbs-rbutton02" style="text-align: right; margin-top: 10px;">
+     <span class="button large icon">
+       <button type="button" onclick="makeFolder();">
+         <img src="/ilos/images/common/btn_icon.gif"> <%=viewItem.getString("B.확인") %>
+       </button>
+     </span>
+   </div>
+</div>
+
+
+<%-- +++++++++++++++++++++++ 파일이동 +++++++++++++++++++++++++++++ --%>
+   
+<div id="dialog6" title="<%=viewItem.getString("파일이동") %>" style="display:none;">
+   <div style="clear:both;border:1px solid #dadada;overflow:hidden;">
+     <div style="float:left;margin:10px 10px 10px 10px;"><%=viewItem.getString("파일경로") %></div><div class="file-navs2"><div class="file-nav2" path="">/</div></div>
+   </div>
+   <div style="border-top: 1px solid #dadada;border-bottom: 1px solid #dadada;margin-top:5px;">
+     <div style="padding:5px;background-color:#eeeeee;overflow:hidden;">
+       <div style="float:left;display:block;text-align:center;">Target Folder</div>
+     </div>
+   </div>
+   <div style="border-top: 1px solid #dadada;border-bottom: 1px solid #dadada;height:270px;overflow-y:auto;">
+     <ul id="files2"></ul>
+   </div>
+   
+   <!-- [S]Button -->
+   <div class="bbs-rbutton02" style="text-align: right; margin-top: 10px;">
+     <span class="button large icon">
+       <button type="button" onclick="moveFile();">
+         <img src="/ilos/images/common/btn_icon.gif"> <%=viewItem.getString("B.확인") %>
+       </button>
+     </span>
+   </div>
+</div>
+
+<%-- +++++++++++++++++++++++ 이름바꾸기 +++++++++++++++++++++++++++++ --%>
+   
+<div id="dialog7" title="<%=viewItem.getString("이름바꾸기") %>" style="display:none;">
+   <div style="clear:both;border:1px solid #dadada;overflow:hidden;">
+     <div style="margin:10px 10px 10px 10px;">New name</div>
+     <div style="margin:10px 10px 10px 10px;">
+       <input type="text" id="newfile" source="" class="txttype02" style="width:230px; text-align: right;" />
+       <span id="newfile_ext"></span>
+     </div>
+   </div>
+   
+   <!-- [S]Button -->
+   <div class="bbs-rbutton02" style="text-align: right; margin-top: 10px;">
+     <span class="button large icon">
+       <button type="button" onclick="renameFile();">
+         <img src="/ilos/images/common/btn_icon.gif"> <%=viewItem.getString("B.확인") %>
+       </button>
+     </span>
+   </div>
+</div>
+
+<form id="downloadForm" name="downloadForm" action="/ilos/pf/contents/contents2_zipfile_download.acl" method="POST">
+  <input name="file" value="" type="hidden">
+</form>
+<%if(EnvUtility.getSProperty().getString("commons.SiteAuthKey") != null) {%>
+<form name="commonsform" action="<%=EnvUtility.getSProperty().getString("commons.loginURL")%>" method="POST">
+<input type="hidden" name="SiteAuthKey"  id="SiteAuthKey"  value="<%=EnvUtility.getSProperty().getString("commons.SiteAuthKey")%>" />
+<input type="hidden" name="UserID"       id="UserID"       value="<%=param.getString(commons_session_id).equalsIgnoreCase("admin") ? EnvUtility.getSProperty().getString("commons.user_id") : param.getString(commons_session_id)%>" />
+<input type="hidden" name="UserName"     id="UserName"     value="<%=param.getString(commons_session_id)%>" />
+<input type="hidden" name="UserType"     id="UserType"     value="<%=param.getString(commons_session_id).equals("hmaster")||param.getString(commons_session_id).equalsIgnoreCase("admin")? "9": param.getString("session.se_flag").equals("1") ? "6" : param.getString("session.se_flag").equals("2") ? "4" : "1"%>" /><input type="hidden" name="Email"        id="Email"        value="" />
+<input type="hidden" name="NickName"     id="NickName"     value="" />
+<input type="hidden" name="DeptGroup"    id="DeptGroup"    value="" />
+<input type="hidden" name="Action"       id="Action"       value="embed" />
+<input type="hidden" name="ReturnURL"    id="ReturnURL"    value="<%=EnvUtility.getSProperty().getString("commons.returnURL")%>/ilos/commons_value.jsp" />
+</form>
+<%} %>
+<%if(EnvUtility.getSProperty().getString("commons2.loginURL") != null) {%>
+<form name="commonsform2" action="<%=EnvUtility.getSProperty().getString("commons2.loginURL")%>" method="POST">
+<input type="hidden" name="UserID"       id="UserID"       value="<%=param.getString(commons_session_id).equalsIgnoreCase("admin") ? EnvUtility.getSProperty().getString("commons2.user_id") : param.getString(commons_session_id)%>" />
+<input type="hidden" name="UserName"     id="UserName"     value="<%=param.getString(commons_session_id)%>" />
+<input type="hidden" name="UserType"     id="UserType"     value="<%=param.getString(commons_session_id).equals("hmaster")||param.getString(commons_session_id).equalsIgnoreCase("admin")? "9": param.getString("session.se_flag").equals("1") ? "6" : param.getString("session.se_flag").equals("2") ? "4" : "1"%>" />
+<input type="hidden" name="Email"        id="Email"        value="" />
+<input type="hidden" name="NickName"     id="NickName"     value="" />
+<input type="hidden" name="DeptGroup"    id="DeptGroup"    value="" />
+<input type="hidden" name="Action"       id="Action"       value="MyContents" />
+<input type="hidden" name="OutputType"    id="OutputType"    value="embed" />
+</form>
+<%} %>
+<%
+  if(EnvUtility.getSProperty().getString("bns.site.popupURL") != null) {
+    String uid = param.getString(bns_session_id).equalsIgnoreCase("admin") ? EnvUtility.getSProperty().getString("bns.admin_id") : param.getString(bns_session_id);
+//     uid = "teac1";
+    uid = !(uid == null || uid.length() == 0) ? Base64.encodeBase64String(uid.getBytes()) : "";
+%>
+<form name="bnsform" action="<%=Change.null2empty(EnvUtility.getSProperty().getString("bns.site.popupURL"))%>" method="POST" enctype="application/x-www-form-urlencoded">
+<input type="hidden" name="uid"       id="bnsUid"       value="<%=uid%>" />
+<input type="hidden" name="return_url"     id="bnsReturnURL"     value="<%=Change.null2empty(EnvUtility.getSProperty().getString("bns.returnURL")) %>" />
+<%-- <input type="hidden" name="UserType"     id="UserType"     value="<%=param.getString(bns_session_id).equals("hmaster")||param.getString(commons_session_id).equalsIgnoreCase("admin")? "9": param.getString("session.se_flag").equals("1") ? "6" : param.getString("session.se_flag").equals("2") ? "4" : "1"%>" /> --%>
+</form>
+<%} %>
+<iframe name="hidden" style="width:0px; height:0px" frameborder="0"></iframe>
+
+<video id="hidden_video" preload="metadata" style="display: none;">
+  <source src="" type="video/mp4" />
+</video>
+
+<!-- <div id="vsquarePopupWrap" style="display:none;"></div> -->
+<% if ( isVsquare ) { %>
+<div id="vsquarePopupWrap" style="display:none;">
+  <iframe id="vsquareDisplay" width="100%" height="100%" src="" frameborder="0"></iframe>
+</div>
+<% } %>
+
+<%-- +++++++++++++++++++++++  파일 탐색기 끝 +++++++++++++++++++++++++++++ --%>
+
+</body>
+</html>

@@ -1,0 +1,207 @@
+/*
+ * 폰트 라이센스 - 네이버, 나눔고딕
+ * Copyright (c) 2010, NAVER Corporation (http://www.nhncorp.com),
+ * with Reserved Font Name Nanum, Naver Nanum, NanumGothic, Naver NanumGothic, NanumMyeongjo, Naver NanumMyeongjo, NanumBrush, Naver NanumBrush, NanumPen, Naver NanumPen, Naver NanumGothicEco, NanumGothicEco, Naver NanumMyeongjoEco, NanumMyeongjoEco, Naver NanumGothicLight, NanumGothicLight, NanumBarunGothic, Naver NanumBarunGothic,
+ * This Font Software is licensed under the SIL Open Font License, Version 1.1.
+ * This license is copied below, and is also available with a FAQ at: http://scripts.sil.org/OFL
+ * SIL OPEN FONT LICENSE
+ * Version 1.1 - 26 February 2007
+ * 
+*/
+
+pdfMake.fonts = {
+    NanumGothic: {
+      normal: 'NanumGothic.ttf',
+      bold: 'NanumGothicBold.ttf',
+      italics: 'NanumGothic.ttf',
+      bolditalics: 'NanumGothic.ttf'
+    }
+};
+
+var btn = document.getElementById("printBtn");
+var li = document.getElementById("attend_list");
+
+btn.addEventListener('click', pdfmakeFun);
+
+function pdfmakeFun(){
+  var content = [];
+  var el = [];
+  var t = {
+      table: {
+        body: []
+      }
+  }
+  
+  var st ={
+      stack: []
+  };
+  st.stack.push("이름");
+  st.rowSpan = 3;
+  
+  el=[];
+  el.push(st);
+  t.table.body.push(el);
+  el=[];
+  el.push('');
+  t.table.body.push(el);
+  el=[];
+  el.push('');
+  t.table.body.push(el);
+  
+  // ***** left
+  var stuInfo = document.getElementById('at_id').getElementsByTagName('a');
+  var stuInfoLength = stuInfo.length;
+  for(var i=0; i < stuInfoLength; i++){
+      var str = new String(stuInfo[i].innerText);
+      str = str.replace(/\t/g, "").replace(/\n/g, "");
+      el=[];
+      el.push(str);
+      t.table.body.push(el);
+  }
+  
+  // ***** mid
+  var attdInfo = document.getElementById('at_table');
+  var rowLength = attdInfo.rows[0].cells.length;
+  var rowLenMax=Number(0);
+  var colSpanArr = [];
+  
+  
+  for(var i=0; i<rowLength; i++){
+    var colSpan = attdInfo.rows[0].cells[i].getAttribute('colspan');
+    if(colSpan == 1){
+      t.table.body[1].push(attdInfo.rows[0].cells[i].innerText);
+    }else{
+      var s = {stack:[]};
+      s.stack.push(attdInfo.rows[0].cells[i].innerText);
+      s.colSpan = colSpan;
+      t.table.body[1].push(s);
+    }
+    
+    // 주차
+    // 주차 col span
+    rowLenMax += Number(colSpan);
+    colSpanArr.push(colSpan);
+    
+    while(colSpan > 1){
+      t.table.body[1].push('');
+      --colSpan;
+    }
+  }
+  
+  st ={ stack: [] };
+  st.stack.push("주차정보");
+  st.colSpan = rowLenMax;
+  t.table.body[0].push(st);
+  
+  for(var i=0; i<rowLenMax; i++){
+    // 주차정보 col span 채우기
+    if(!(rowLenMax-2 == i)) t.table.body[0].push('');
+    // 차시
+    t.table.body[2].push(attdInfo.rows[1].cells[i].innerText);
+  }
+  
+  
+  for(var i=2; i<attdInfo.rows.length; i++){
+    for(var j=0; j<attdInfo.rows[i].cells.length; j++){
+      t.table.body[i+1].push(attdInfo.rows[i].cells[j].innerText);
+    }
+  }
+  
+  // ***** right
+  var attdAll = document.getElementById('at_table_right');
+  
+  var st1 ={ stack: [] };
+  st1.stack.push("출석");
+  st1.rowSpan = 3;
+  t.table.body[0].push(st1);
+  t.table.body[1].push('');
+  t.table.body[2].push('');
+
+  var st2 ={ stack:[] };
+  st2.stack.push("지각");
+  st2.rowSpan = 3;
+  t.table.body[0].push(st2);
+  t.table.body[1].push('');
+  t.table.body[2].push('');
+  
+  var st3 ={ stack:[] };
+  st3.stack.push("결석");
+  st3.rowSpan = 3;
+  t.table.body[0].push(st3);
+  t.table.body[1].push('');
+  t.table.body[2].push('');
+  
+  var st4 ={ stack:[] };
+  st4.stack.push("미체크");
+  st4.rowSpan = 3;
+  t.table.body[0].push(st4);
+  t.table.body[1].push('');
+  t.table.body[2].push('');
+  
+  var trRow = attdAll.getElementsByClassName('tr_row');
+  
+  for(var i=0; i <trRow.length; i++){
+    var txtArr = new String(trRow[i].innerText).split("");
+    t.table.body[i+3].push(txtArr[0]);
+    t.table.body[i+3].push(txtArr[1]);
+    t.table.body[i+3].push(txtArr[2]);
+    t.table.body[i+3].push(txtArr[3]);
+  }
+  
+  var // 과목 정보 value
+  ledgYearAndLedgSessn = document.getElementById("ledgYearAndLedgSessn").value,
+  lectTime = document.getElementById("lectTime").value,
+  campusNm = document.getElementById("campusNm").value,
+  subjtNm = document.getElementById("subjtNm").value,
+  lssnCd = document.getElementById("lssnCd").value,
+  comptFldLvlAndTimeCnt = document.getElementById("comptFldLvlAndTimeCnt").value,
+  profNm = document.getElementById("profNm").value;
+  
+  var // 과목 정보 key
+  lecTimeKey = "강의실/요일",
+  subjtNmKey = "교과목명",
+  lssnCdKey = "과목코드",
+  comptFldLvlAndTimeCntKey = "학점,시간",
+  profNmKey = "담당교수",
+  presenExmKey = "표기예시",
+  presenExmVal = "● : 출석 , ▲ : 지각, X : 결석, - : 미체크";
+  
+  // ******* output
+  
+  var docDefinition = {
+      pageSize: 'A4',
+      pageOrientation: 'landscape',
+      pageMargins: [ 20, 20, 20, 20 ],
+      widths: ['auto', 'auto','auto','auto'],
+      content: [{text: '출석부', style: 'header', alignment: 'center'},
+        {
+          table: {
+          body: [
+              [ledgYearAndLedgSessn, lecTimeKey, {text: lectTime, colSpan: 2, alignment: 'center'}, {}, {text: campusNm, colSpan: 2, alignment: 'center'}, {}],
+              [subjtNmKey, subjtNm, lssnCdKey, lssnCd, comptFldLvlAndTimeCntKey, comptFldLvlAndTimeCnt],
+              [profNmKey, profNm, presenExmKey, {text:presenExmVal, colSpan: 3}, {}, {}]
+          ]
+        }
+      },
+      {text: '', pageBreak: 'after'},
+      t],
+      styles: {
+        header: {
+          fontSize: 10,
+          bold: false
+        }
+      },
+      defaultStyle: {
+        font: 'NanumGothic'
+      }
+  };
+  
+	pdfMake.createPdf(docDefinition).open();
+}
+
+
+
+
+
+
+

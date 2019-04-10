@@ -1,0 +1,15 @@
+//ilos 교육현황 > 강의과목 > 질의응답 상세보기
+
+@/ilos/lo/session_check.acl
+@/ilos/lo/st_session_room_check.acl
+
+
+param >> eclass.Qna.getRegIdCheck >> dcUserCheck   
+if dcUserCheck != error
+  param >> eclass.Qna.getQnaView >> dc   
+  param >> eclass.Qna.getClassArtlAnswerView >> dcAnswer  //답변조회
+  param,dc,dcAnswer >> "/WEB-INF/jsp/st/course/qna_view_form.jsp"
+else
+  param ,dcUserCheck>> "/WEB-INF/jsp/st/course/qna_unlist_result_message.jsp"
+endif
+

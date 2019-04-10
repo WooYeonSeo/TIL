@@ -1,0 +1,963 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE SQLX PUBLIC
+       "-//AIMAXSOFT co//DTD SQLX 2.0//EN"
+       "http://www.aimaxsoft.co.kr/framework/dtds/sqlx_2_0.dtd">
+
+<sqlx>   
+
+  <!-- e-class 개설과정 강의 계획서 강의 정보  -->
+  <executeQuery id="getEclassSubjectView" statementType="stmt">
+    <query>  
+SELECT            
+        A.ORG_SECT,
+        A.LEDG_YEAR,
+        A.LEDG_SESSN,
+        A.LSSN_CD,
+        A.SUBJT_NO,
+        A.EMP_NO,
+        A.DST_GRAD,
+        ''  AS LECTR_CONST_NO,
+        A.DAY_TIME,
+        A.SUBJT_NM AS SUBJT_NA_KR,
+        A.SUBJT_NM AS SUBJT_NM,
+        A.SUBJT_NM_EN AS SUBJT_NM_EN,
+        A.UNIT_NUM,
+        A.LSSN_NUM,
+        A.crs_strct_nm AS crs_strct_nm,
+        A.COMPT_FLD_SNA,
+        B.NAME    AS NAME,
+        B.DEPT_NM AS DEPT_L_NM,
+        B.TEL_NO  AS TEL_NO,
+        B.E_MAIL  AS E_MAIL,
+        B.HP_NO   AS HP_NO
+  FROM HAK_OPEN_COURSE A, v_eclass_user_info B
+ WHERE A.ORG_SECT = <param name="ORG_SECT" index="#" />
+   AND A.LEDG_YEAR = <param name="LEDG_YEAR" index="#"/>
+   AND A.LEDG_SESSN = <param name="LEDG_SESSN" index="#"/>
+   AND A.SUBJT_NO = <param name="SUBJT_NO" index="#"/>
+   AND A.LSSN_CD = <param name="LSSN_CD" index="#"/>
+   AND A.EMP_NO = B.USER_ID(+)
+ 
+     </query>
+  </executeQuery>     
+  
+  <!-- e-class 개설과정 강의 계획서 조회   -->
+  <executeQuery id="getEclassPlanView" statementType="stmt">
+    <query>
+SELECT   
+  A.ORG_SECT, A.LEDG_YEAR, A.LEDG_SESSN, A.LSSN_CD, A.SUBJT_NO
+, A.SUBJT_NM, A.SUBJT_NM_EN, A.DEPT_NM, A.UNIT_NUM, A.LSSN_NUM, A.EMP_NO
+, A.LEC_TRGT, A.SANG_TM, A.LEC_CONTACT, A.ROOM_TEL, A.HAND_TEL, A.EMAIL
+, A.LEC_OUTLINE, A.LEC_OBJECT, A.LEC_SUBJECT, A.MID_RAT, A.END_RAT, A.QUIZ_RAT
+, A.REPORT_RAT, A.ATT_RAT, A.ETC_NM1, A.ETC_RAT1, A.ETC_NM2, A.ETC_RAT2
+, A.ETC_NM3, A.ETC_RAT3, A.ETC_NM4, A.ETC_RAT4, A.ETC_NM5, A.ETC_RAT5
+, A.MAIN_MAT_NM1, A.MAIN_MAT_AUTH1, A.MAIN_MAT_COM1, A.MAIN_MAT_YY1
+, A.MAIN_MAT_NM2, A.MAIN_MAT_AUTH2, A.MAIN_MAT_COM2, A.MAIN_MAT_YY2
+, A.MAIN_MAT_NM3, A.MAIN_MAT_AUTH3, A.MAIN_MAT_COM3, A.MAIN_MAT_YY3
+, A.SUB_MAT_NM1, A.SUB_MAT_AUTH1, A.SUB_MAT_COM1, A.SUB_MAT_YY1
+, A.SUB_MAT_NM2, A.SUB_MAT_AUTH2, A.SUB_MAT_COM2, A.SUB_MAT_YY2
+, A.SUB_MAT_NM3, A.SUB_MAT_AUTH3, A.SUB_MAT_COM3, A.SUB_MAT_YY3
+, A.SUB_MAT_NM4, A.SUB_MAT_AUTH4, A.SUB_MAT_COM4, A.SUB_MAT_YY4
+, A.SUB_MAT_NM5, A.SUB_MAT_AUTH5, A.SUB_MAT_COM5, A.SUB_MAT_YY5
+, A.ETC_MAT_NM, A.USE_PROGRAM, A.LEC_SYS01, A.LEC_SYS02, A.LEC_SYS03
+, A.LEC_SYS04, A.LEC_SYS05, A.LEC_SYS06, A.LEC_SYS07, A.LEC_SYS08, A.LEC_SYS09
+, A.LEC_SYS10, A.LEC_SYS11, A.LEC_SYS12, A.LEC_SYS13, A.CNFM_FG
+FROM HAK_COURSE_PLAN A 
+WHERE A.ORG_SECT = <param name="ORG_SECT" index="#" />
+ AND A.LEDG_YEAR = <param name="LEDG_YEAR" index="#"/>
+ AND A.LEDG_SESSN = <param name="LEDG_SESSN" index="#" />
+ AND A.SUBJT_NO = <param name="SUBJT_NO" index="#" />
+ AND A.LSSN_CD = <param name="LSSN_CD" index="#" />
+    </query>
+  </executeQuery>    
+   
+   
+  <!-- e-class 개설과정 강의 주차 계획서 조회   -->
+  <executeQuery id="getEclassPlanWeekView" statementType="stmt">
+    <query>
+SELECT   
+  A.ORG_SECT
+, A.LEDG_YEAR
+, A.LEDG_SESSN
+, A.LSSN_CD
+, A.SUBJT_NO
+, A.WEEK  AS WEEK
+, A.ST_MMDD  ST_MMDD
+, A.ED_MMDD  ED_MMDD
+, A.LEC_CONTENTS
+, A.LEC_MATERIAL
+, A.REFERENCE
+, A.LEC_ETC
+FROM HAK_COURSE_PLAN_WEEK A 
+WHERE A.ORG_SECT = <param name="ORG_SECT" index="#" />
+ AND A.LEDG_YEAR = <param name="LEDG_YEAR" index="#"/>
+ AND A.LEDG_SESSN = <param name="LEDG_SESSN" index="#" />
+ AND A.SUBJT_NO = <param name="SUBJT_NO" index="#" />
+ AND A.LSSN_CD = <param name="LSSN_CD" index="#" />
+ order by WEEK
+    </query>
+  </executeQuery>   
+
+  <!-- e-class 개설과정 강의 주차 계획서 조회   -->
+  <executeQuery id="getEclassPlanWeekPeriodView" statementType="pstmt">
+    <query>
+SELECT   
+  <param name="ORG_SECT" index="#" /> as  ORG_SECT
+, A.LEDG_YEAR
+, A.LEDG_SESSN
+, <param name="LSSN_CD" index="#" /> AS LSSN_CD
+, <param name="SUBJT_NO" index="#" /> AS SUBJT_NO
+, A.WEEK  AS WEEK
+, A.ST_MMDD  ST_MMDD
+, A.ED_MMDD  ED_MMDD
+, '' AS LEC_CONTENTS
+, '' AS LEC_MATERIAL
+, '' AS REFERENCE
+, '' AS LEC_ETC
+FROM HAK_WEEK_PERIOD A 
+WHERE A.LEDG_YEAR = <param name="LEDG_YEAR" index="#"/>
+ AND A.LEDG_SESSN = <param name="LEDG_SESSN" index="#" /> 
+ order by WEEK
+    </query>
+  </executeQuery>   
+  
+  
+   <!--  수업계획서등록  -->
+  <executeQuery id="INSERT_HAK_COURSE_PLAN" statementType="pstmt" timeout="20000">
+    <query>
+INSERT INTO HAK_COURSE_PLAN
+(
+  ORG_SECT
+, LEDG_YEAR
+, LEDG_SESSN
+, LSSN_CD
+, SUBJT_NO
+, SUBJT_NM
+, SUBJT_NM_EN
+, DEPT_NM
+, UNIT_NUM
+, LSSN_NUM
+, EMP_NO
+, LEC_TRGT
+, SANG_TM
+, LEC_CONTACT
+, ROOM_TEL
+, HAND_TEL
+, EMAIL
+, LEC_OUTLINE
+, LEC_OBJECT
+, LEC_SUBJECT
+, MID_RAT
+, END_RAT
+, QUIZ_RAT
+, REPORT_RAT
+, ATT_RAT
+, ETC_NM1
+, ETC_RAT1
+, ETC_NM2
+, ETC_RAT2
+, ETC_NM3
+, ETC_RAT3
+, ETC_NM4
+, ETC_RAT4
+, ETC_NM5
+, ETC_RAT5
+, MAIN_MAT_NM1
+, MAIN_MAT_AUTH1
+, MAIN_MAT_COM1
+, MAIN_MAT_YY1
+, MAIN_MAT_NM2
+, MAIN_MAT_AUTH2
+, MAIN_MAT_COM2
+, MAIN_MAT_YY2
+, MAIN_MAT_NM3
+, MAIN_MAT_AUTH3
+, MAIN_MAT_COM3
+, MAIN_MAT_YY3
+, SUB_MAT_NM1
+, SUB_MAT_AUTH1
+, SUB_MAT_COM1
+, SUB_MAT_YY1
+, SUB_MAT_NM2
+, SUB_MAT_AUTH2
+, SUB_MAT_COM2
+, SUB_MAT_YY2
+, SUB_MAT_NM3
+, SUB_MAT_AUTH3
+, SUB_MAT_COM3
+, SUB_MAT_YY3
+, SUB_MAT_NM4
+, SUB_MAT_AUTH4
+, SUB_MAT_COM4
+, SUB_MAT_YY4
+, SUB_MAT_NM5
+, SUB_MAT_AUTH5
+, SUB_MAT_COM5
+, SUB_MAT_YY5
+, ETC_MAT_NM
+, USE_PROGRAM
+, LEC_SYS01
+, LEC_SYS02
+, LEC_SYS03
+, LEC_SYS04
+, LEC_SYS05
+, LEC_SYS06
+, LEC_SYS07
+, LEC_SYS08
+, LEC_SYS09
+, LEC_SYS10
+, LEC_SYS11
+, LEC_SYS12
+, LEC_SYS13
+, CNFM_FG
+, REG_ID
+, REG_DTM 
+)
+VALUES
+(
+  <param name="ORG_SECT       " index="#" />
+, <param name="LEDG_YEAR      " index="#" />
+, <param name="LEDG_SESSN     " index="#" />
+, <param name="LSSN_CD        " index="#" />
+, <param name="SUBJT_NO       " index="#" />
+, <param name="SUBJT_NM       " index="#" />
+, <param name="SUBJT_NM_EN    " index="#" />
+, <param name="DEPT_NM        " index="#" />
+, <param name="UNIT_NUM       " index="#" />
+, <param name="LSSN_NUM       " index="#" />
+, <param name="EMP_NO         " index="#" />
+, <param name="LEC_TRGT       " index="#" />
+, <param name="SANG_TM        " index="#" />
+, <param name="LEC_CONTACT    " index="#" />
+, <param name="ROOM_TEL       " index="#" />
+, <param name="HAND_TEL       " index="#" />
+, <param name="EMAIL          " index="#" />
+, <param name="LEC_OUTLINE    " index="#" />
+, <param name="LEC_OBJECT     " index="#" />
+, <param name="LEC_SUBJECT    " index="#" />
+, <param name="MID_RAT        " index="#" />
+, <param name="END_RAT        " index="#" />
+, <param name="QUIZ_RAT       " index="#" />
+, <param name="REPORT_RAT     " index="#" />
+, <param name="ATT_RAT        " index="#" />
+, <param name="ETC_NM1        " index="#" />
+, <param name="ETC_RAT1       " index="#" />
+, <param name="ETC_NM2        " index="#" />
+, <param name="ETC_RAT2       " index="#" />
+, <param name="ETC_NM3        " index="#" />
+, <param name="ETC_RAT3       " index="#" />
+, <param name="ETC_NM4        " index="#" />
+, <param name="ETC_RAT4       " index="#" />
+, <param name="ETC_NM5        " index="#" />
+, <param name="ETC_RAT5       " index="#" />
+, <param name="MAIN_MAT_NM1   " index="#" />
+, <param name="MAIN_MAT_AUTH1 " index="#" />
+, <param name="MAIN_MAT_COM1  " index="#" />
+, <param name="MAIN_MAT_YY1   " index="#" />
+, <param name="MAIN_MAT_NM2   " index="#" />
+, <param name="MAIN_MAT_AUTH2 " index="#" />
+, <param name="MAIN_MAT_COM2  " index="#" />
+, <param name="MAIN_MAT_YY2   " index="#" />
+, <param name="MAIN_MAT_NM3   " index="#" />
+, <param name="MAIN_MAT_AUTH3 " index="#" />
+, <param name="MAIN_MAT_COM3  " index="#" />
+, <param name="MAIN_MAT_YY3   " index="#" />
+, <param name="SUB_MAT_NM1    " index="#" />
+, <param name="SUB_MAT_AUTH1  " index="#" />
+, <param name="SUB_MAT_COM1   " index="#" />
+, <param name="SUB_MAT_YY1    " index="#" />
+, <param name="SUB_MAT_NM2    " index="#" />
+, <param name="SUB_MAT_AUTH2  " index="#" />
+, <param name="SUB_MAT_COM2   " index="#" />
+, <param name="SUB_MAT_YY2    " index="#" />
+, <param name="SUB_MAT_NM3    " index="#" />
+, <param name="SUB_MAT_AUTH3  " index="#" />
+, <param name="SUB_MAT_COM3   " index="#" />
+, <param name="SUB_MAT_YY3    " index="#" />
+, <param name="SUB_MAT_NM4    " index="#" />
+, <param name="SUB_MAT_AUTH4  " index="#" />
+, <param name="SUB_MAT_COM4   " index="#" />
+, <param name="SUB_MAT_YY4    " index="#" />
+, <param name="SUB_MAT_NM5    " index="#" />
+, <param name="SUB_MAT_AUTH5  " index="#" />
+, <param name="SUB_MAT_COM5   " index="#" />
+, <param name="SUB_MAT_YY5    " index="#" />
+, <param name="ETC_MAT_NM     " index="#" />
+, <param name="USE_PROGRAM     " index="#" />
+, <param name="LEC_SYS01      " index="#" />
+, <param name="LEC_SYS02      " index="#" />
+, <param name="LEC_SYS03      " index="#" />
+, <param name="LEC_SYS04      " index="#" />
+, <param name="LEC_SYS05      " index="#" />
+, <param name="LEC_SYS06      " index="#" />
+, <param name="LEC_SYS07      " index="#" />
+, <param name="LEC_SYS08      " index="#" />
+, <param name="LEC_SYS09      " index="#" />
+, <param name="LEC_SYS10      " index="#" />
+, <param name="LEC_SYS11      " index="#" />
+, <param name="LEC_SYS12      " index="#" />
+, <param name="LEC_SYS13      " index="#" />
+, 'Y'
+,  <param name="session.user_id" index="#" />
+, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+)
+    </query>
+   </executeQuery>    
+   
+   <!--  수업계획서 수정 -->
+  <executeQuery id="UPDATE_HAK_COURSE_PLAN" statementType="pstmt" timeout="20000">
+    <query>
+UPDATE  HAK_COURSE_PLAN SET 
+  SUBJT_NM    = <param name="SUBJT_NM" index="#" />
+, SUBJT_NM_EN = <param name="SUBJT_NM_EN" index="#" />
+, DEPT_NM     = <param name="DEPT_NM" index="#" />
+, UNIT_NUM    = <param name="UNIT_NUM" index="#" />
+, LSSN_NUM    = <param name="LSSN_NUM" index="#" />
+, EMP_NO      = <param name="EMP_NO" index="#" />
+, LEC_TRGT    = <param name="LEC_TRGT" index="#" />
+, SANG_TM     = <param name="SANG_TM" index="#" />
+, LEC_CONTACT = <param name="LEC_CONTACT    " index="#" />
+, ROOM_TEL    = <param name="ROOM_TEL       " index="#" />
+, HAND_TEL    = <param name="HAND_TEL       " index="#" />
+, EMAIL       = <param name="EMAIL          " index="#" />
+, LEC_OUTLINE = <param name="LEC_OUTLINE    " index="#" />
+, LEC_OBJECT  = <param name="LEC_OBJECT     " index="#" />
+, LEC_SUBJECT = <param name="LEC_SUBJECT    " index="#" />
+, MID_RAT     = <param name="MID_RAT        " index="#" />
+, END_RAT     = <param name="END_RAT        " index="#" />
+, QUIZ_RAT    = <param name="QUIZ_RAT       " index="#" />
+, REPORT_RAT  = <param name="REPORT_RAT     " index="#" />
+, ATT_RAT     = <param name="ATT_RAT        " index="#" />
+, ETC_NM1     = <param name="ETC_NM1        " index="#" />
+, ETC_RAT1    = <param name="ETC_RAT1       " index="#" />
+, ETC_NM2     = <param name="ETC_NM2        " index="#" />
+, ETC_RAT2    = <param name="ETC_RAT2       " index="#" /> 
+, ETC_NM3     = <param name="ETC_NM3        " index="#" />
+, ETC_RAT3    = <param name="ETC_RAT3       " index="#" />
+, ETC_NM4     = <param name="ETC_NM4        " index="#" />
+, ETC_RAT4    = <param name="ETC_RAT4       " index="#" />
+, ETC_NM5     = <param name="ETC_NM5        " index="#" />
+, ETC_RAT5    = <param name="ETC_RAT5       " index="#" />
+, MAIN_MAT_NM1   = <param name="MAIN_MAT_NM1   " index="#" />
+, MAIN_MAT_AUTH1 = <param name="MAIN_MAT_AUTH1   " index="#" />
+, MAIN_MAT_COM1  = <param name="MAIN_MAT_COM1   " index="#" />
+, MAIN_MAT_YY1   = <param name="MAIN_MAT_YY1   " index="#" />
+, MAIN_MAT_NM2   = <param name="MAIN_MAT_NM2   " index="#" />
+, MAIN_MAT_AUTH2 = <param name="MAIN_MAT_AUTH2   " index="#" />
+, MAIN_MAT_COM2  = <param name="MAIN_MAT_COM2   " index="#" />
+, MAIN_MAT_YY2   = <param name="MAIN_MAT_YY2   " index="#" />
+, MAIN_MAT_NM3   = <param name="MAIN_MAT_NM3   " index="#" />
+, MAIN_MAT_AUTH3 = <param name="MAIN_MAT_AUTH3   " index="#" />
+, MAIN_MAT_COM3  = <param name="MAIN_MAT_COM3   " index="#" />
+, MAIN_MAT_YY3   = <param name="MAIN_MAT_YY3   " index="#" />
+, SUB_MAT_NM1    = <param name="SUB_MAT_NM1   " index="#" />
+, SUB_MAT_AUTH1  = <param name="SUB_MAT_AUTH1   " index="#" />
+, SUB_MAT_COM1   = <param name="SUB_MAT_COM1   " index="#" />
+, SUB_MAT_YY1    = <param name="SUB_MAT_YY1   " index="#" />
+, SUB_MAT_NM2    = <param name="SUB_MAT_NM2   " index="#" />
+, SUB_MAT_AUTH2  = <param name="SUB_MAT_AUTH2   " index="#" />
+, SUB_MAT_COM2   = <param name="SUB_MAT_COM2   " index="#" />
+, SUB_MAT_YY2    = <param name="SUB_MAT_YY2   " index="#" />
+, SUB_MAT_NM3    = <param name="SUB_MAT_NM3   " index="#" />
+, SUB_MAT_AUTH3  = <param name="SUB_MAT_AUTH3   " index="#" />
+, SUB_MAT_COM3   = <param name="SUB_MAT_COM3   " index="#" />
+, SUB_MAT_YY3    = <param name="SUB_MAT_YY3   " index="#" />
+, SUB_MAT_NM4    = <param name="SUB_MAT_NM4   " index="#" />
+, SUB_MAT_AUTH4  = <param name="SUB_MAT_AUTH4   " index="#" />
+, SUB_MAT_COM4   = <param name="SUB_MAT_COM4   " index="#" />
+, SUB_MAT_YY4    = <param name="SUB_MAT_YY4   " index="#" />
+, SUB_MAT_NM5    = <param name="SUB_MAT_NM5   " index="#" />
+, SUB_MAT_AUTH5  = <param name="SUB_MAT_AUTH5   " index="#" />
+, SUB_MAT_COM5   = <param name="SUB_MAT_COM5   " index="#" />
+, SUB_MAT_YY5    = <param name="SUB_MAT_YY5   " index="#" />
+, ETC_MAT_NM     = <param name="ETC_MAT_NM   " index="#" />
+, USE_PROGRAM    = <param name="USE_PROGRAM   " index="#" />
+, LEC_SYS01      = <param name="LEC_SYS01   " index="#" />
+, LEC_SYS02      = <param name="LEC_SYS02   " index="#" />
+, LEC_SYS03      = <param name="LEC_SYS03   " index="#" />
+, LEC_SYS04      = <param name="LEC_SYS04   " index="#" />
+, LEC_SYS05      = <param name="LEC_SYS05   " index="#" />
+, LEC_SYS06      = <param name="LEC_SYS06   " index="#" />
+, LEC_SYS07      = <param name="LEC_SYS07   " index="#" />
+, LEC_SYS08      = <param name="LEC_SYS08   " index="#" />
+, LEC_SYS09      = <param name="LEC_SYS09   " index="#" />
+, LEC_SYS10      = <param name="LEC_SYS10   " index="#" />
+, LEC_SYS11      = <param name="LEC_SYS11   " index="#" />
+, LEC_SYS12      = <param name="LEC_SYS12   " index="#" />
+, LEC_SYS13      = <param name="LEC_SYS13   " index="#" />
+, CNFM_FG        = 'Y'
+, UPT_ID         = <param name="session.user_id" index="#" />
+, UPT_DTM        = to_char(sysdate, 'yyyymmddhh24miss')
+WHERE ORG_SECT  = <param name="ORG_SECT       " index="#" />
+  AND LEDG_YEAR = <param name="LEDG_YEAR      " index="#" />
+  AND LEDG_SESSN = <param name="LEDG_SESSN     " index="#" />
+  AND LSSN_CD = <param name="LSSN_CD        " index="#" />
+  AND SUBJT_NO = <param name="SUBJT_NO       " index="#" />
+    </query>
+   </executeQuery>       
+   
+   <!--  수업계획서 복사-->
+  <executeQuery id="INSERT_COPY_HAK_COURSE_PLAN" statementType="stmt" timeout="20000">
+    <query>
+INSERT INTO HAK_COURSE_PLAN
+(
+  ORG_SECT
+, LEDG_YEAR
+, LEDG_SESSN
+, LSSN_CD
+, SUBJT_NO
+, SUBJT_NM
+, SUBJT_NM_EN
+, DEPT_NM
+, UNIT_NUM
+, LSSN_NUM
+, EMP_NO
+, LEC_TRGT
+, SANG_TM
+, LEC_CONTACT
+, ROOM_TEL
+, HAND_TEL
+, EMAIL
+, LEC_OUTLINE
+, LEC_OBJECT
+, LEC_SUBJECT
+, MID_RAT
+, END_RAT
+, QUIZ_RAT
+, REPORT_RAT
+, ATT_RAT
+, ETC_NM1
+, ETC_RAT1
+, ETC_NM2
+, ETC_RAT2
+, ETC_NM3
+, ETC_RAT3
+, ETC_NM4
+, ETC_RAT4
+, ETC_NM5
+, ETC_RAT5
+, MAIN_MAT_NM1
+, MAIN_MAT_AUTH1
+, MAIN_MAT_COM1
+, MAIN_MAT_YY1
+, MAIN_MAT_NM2
+, MAIN_MAT_AUTH2
+, MAIN_MAT_COM2
+, MAIN_MAT_YY2
+, MAIN_MAT_NM3
+, MAIN_MAT_AUTH3
+, MAIN_MAT_COM3
+, MAIN_MAT_YY3
+, SUB_MAT_NM1
+, SUB_MAT_AUTH1
+, SUB_MAT_COM1
+, SUB_MAT_YY1
+, SUB_MAT_NM2
+, SUB_MAT_AUTH2
+, SUB_MAT_COM2
+, SUB_MAT_YY2
+, SUB_MAT_NM3
+, SUB_MAT_AUTH3
+, SUB_MAT_COM3
+, SUB_MAT_YY3
+, SUB_MAT_NM4
+, SUB_MAT_AUTH4
+, SUB_MAT_COM4
+, SUB_MAT_YY4
+, SUB_MAT_NM5
+, SUB_MAT_AUTH5
+, SUB_MAT_COM5
+, SUB_MAT_YY5
+, ETC_MAT_NM
+, USE_PROGRAM
+, LEC_SYS01
+, LEC_SYS02
+, LEC_SYS03
+, LEC_SYS04
+, LEC_SYS05
+, LEC_SYS06
+, LEC_SYS07
+, LEC_SYS08
+, LEC_SYS09
+, LEC_SYS10
+, LEC_SYS11
+, LEC_SYS12
+, LEC_SYS13
+, CNFM_FG
+, REG_ID
+, REG_DTM 
+)
+SELECT 
+  <param name="TRGT_ORG_SECT" index="#"/>  AS ORG_SECT
+, <param name="TRGT_LEDG_YEAR" index="#"/>  AS LEDG_YEAR
+, <param name="TRGT_LEDG_SESSN" index="#"/>  AS LEDG_SESSN
+, <param name="TRGT_LSSN_CD" index="#"/>  AS LSSN_CD
+, <param name="TRGT_SUBJT_NO" index="#"/>  AS SUBJT_NO
+, SUBJT_NM
+, SUBJT_NM_EN
+, DEPT_NM
+, UNIT_NUM
+, LSSN_NUM
+, EMP_NO
+, LEC_TRGT
+, SANG_TM
+, LEC_CONTACT
+, ROOM_TEL
+, HAND_TEL
+, EMAIL
+, LEC_OUTLINE
+, LEC_OBJECT
+, LEC_SUBJECT
+, MID_RAT
+, END_RAT
+, QUIZ_RAT
+, REPORT_RAT
+, ATT_RAT
+, ETC_NM1
+, ETC_RAT1
+, ETC_NM2
+, ETC_RAT2
+, ETC_NM3
+, ETC_RAT3
+, ETC_NM4
+, ETC_RAT4
+, ETC_NM5
+, ETC_RAT5
+, MAIN_MAT_NM1
+, MAIN_MAT_AUTH1
+, MAIN_MAT_COM1
+, MAIN_MAT_YY1
+, MAIN_MAT_NM2
+, MAIN_MAT_AUTH2
+, MAIN_MAT_COM2
+, MAIN_MAT_YY2
+, MAIN_MAT_NM3
+, MAIN_MAT_AUTH3
+, MAIN_MAT_COM3
+, MAIN_MAT_YY3
+, SUB_MAT_NM1
+, SUB_MAT_AUTH1
+, SUB_MAT_COM1
+, SUB_MAT_YY1
+, SUB_MAT_NM2
+, SUB_MAT_AUTH2
+, SUB_MAT_COM2
+, SUB_MAT_YY2
+, SUB_MAT_NM3
+, SUB_MAT_AUTH3
+, SUB_MAT_COM3
+, SUB_MAT_YY3
+, SUB_MAT_NM4
+, SUB_MAT_AUTH4
+, SUB_MAT_COM4
+, SUB_MAT_YY4
+, SUB_MAT_NM5
+, SUB_MAT_AUTH5
+, SUB_MAT_COM5
+, SUB_MAT_YY5
+, ETC_MAT_NM
+, USE_PROGRAM
+, LEC_SYS01
+, LEC_SYS02
+, LEC_SYS03
+, LEC_SYS04
+, LEC_SYS05
+, LEC_SYS06
+, LEC_SYS07
+, LEC_SYS08
+, LEC_SYS09
+, LEC_SYS10
+, LEC_SYS11
+, LEC_SYS12
+, LEC_SYS13
+, CNFM_FG
+, <param name="session.prof_id" index="#" /> AS REG_ID
+, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS') AS REG_DTM 
+FROM HAK_COURSE_PLAN
+WHERE ORG_SECT  = <param name="ORG_SECT" index="#"/>
+  AND LEDG_YEAR  = <param name="LEDG_YEAR" index="#"/>
+  AND LEDG_SESSN  = <param name="LEDG_SESSN" index="#"/>
+  AND LSSN_CD  = <param name="LSSN_CD" index="#"/>
+  AND SUBJT_NO   = <param name="SUBJT_NO" index="#"/>
+    </query>
+   </executeQuery>    
+      
+   <!--  수업계획서 주차등록  -->
+  <executeQuery id="INSERT_HAK_COURSE_PLAN_WEEK" statementType="pstmt" timeout="20000">
+    <query>
+INSERT INTO HAK_COURSE_PLAN_WEEK
+(
+  ORG_SECT
+, LEDG_YEAR
+, LEDG_SESSN
+, LSSN_CD
+, SUBJT_NO
+, WEEK
+, ST_MMDD
+, ED_MMDD
+, LEC_CONTENTS
+, LEC_MATERIAL
+, REFERENCE
+, LEC_ETC
+, REG_ID
+, REG_DTM
+)
+values
+(
+  <param name="ORG_SECT     " index="#" />
+, <param name="LEDG_YEAR    " index="#" />
+, <param name="LEDG_SESSN   " index="#" />
+, <param name="LSSN_CD      " index="#" />
+, <param name="SUBJT_NO     " index="#" />
+, <param name="WEEK         " index="#" />
+, <param name="ST_MMDD      " index="#" />
+, <param name="ED_MMDD      " index="#" />
+, <param name="LEC_CONTENTS " index="#" />
+, <param name="LEC_MATERIAL " index="#" />
+, <param name="REFERENCE    " index="#" />
+, <param name="LEC_ETC      " index="#" />
+,  <param name="session.prof_id" index="#" />
+, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+)
+    </query>
+   </executeQuery>     
+   
+   <!--  수업계획서 주차등록  -->
+  <executeQuery id="INSERT_COPY_HAK_COURSE_PLAN_WEEK" statementType="stmt" timeout="20000">
+    <query>
+INSERT INTO HAK_COURSE_PLAN_WEEK
+(
+  ORG_SECT
+, LEDG_YEAR
+, LEDG_SESSN
+, LSSN_CD
+, SUBJT_NO
+, WEEK
+, ST_MMDD
+, ED_MMDD
+, LEC_CONTENTS
+, LEC_MATERIAL
+, REFERENCE
+, LEC_ETC
+, REG_ID
+, REG_DTM
+)
+SELECT
+  <param name="TRGT_ORG_SECT" index="#"/> ORG_SECT
+, <param name="TRGT_LEDG_YEAR" index="#"/> LEDG_YEAR
+, <param name="TRGT_LEDG_SESSN" index="#"/> LEDG_SESSN
+, <param name="TRGT_LSSN_CD" index="#"/> LSSN_CD
+, <param name="TRGT_SUBJT_NO" index="#"/> SUBJT_NO
+, B.WEEK
+, B.ST_MMDD
+, B.ED_MMDD
+, A.LEC_CONTENTS
+, A.LEC_MATERIAL
+, A.REFERENCE
+, A.LEC_ETC
+,  <param name="session.prof_id" index="#" /> AS REG_ID
+, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')  AS REG_DTM
+FROM HAK_COURSE_PLAN_WEEK A, HAK_WEEK_PERIOD B
+WHERE A.ORG_SECT  = <param name="ORG_SECT" index="#"/>
+  AND A.LEDG_YEAR  = <param name="LEDG_YEAR" index="#"/>
+  AND A.LEDG_SESSN  = <param name="LEDG_SESSN" index="#"/>
+  AND A.LSSN_CD  = <param name="LSSN_CD" index="#"/>
+  AND A.SUBJT_NO   = <param name="SUBJT_NO" index="#"/>
+  AND A.WEEK(+) = B.WEEK
+  AND B.LEDG_YEAR = <param name="TRGT_LEDG_YEAR" index="#"/>
+  AND B.LEDG_SESSN =  <param name="TRGT_LEDG_SESSN" index="#"/>
+  ORDER BY WEEK  
+    </query>
+   </executeQuery>     
+      
+   <!--  수업계획서   삭제 -->
+  <executeQuery id="DELETE_HAK_COURSE_PLAN" statementType="pstmt" timeout="20000">
+    <query>
+DELETE FROM HAK_COURSE_PLAN
+ WHERE ORG_SECT  = <param name="ORG_SECT       " index="#" />
+   AND LEDG_YEAR = <param name="LEDG_YEAR      " index="#" />
+   AND LEDG_SESSN = <param name="LEDG_SESSN     " index="#" />
+   AND LSSN_CD = <param name="LSSN_CD        " index="#" />
+   AND SUBJT_NO = <param name="SUBJT_NO       " index="#" />
+    </query>
+   </executeQuery>    
+   
+   <!--  수업계획서 주차 삭제 -->
+  <executeQuery id="DELETE_HAK_COURSE_PLAN_WEEK" statementType="pstmt" timeout="20000">
+    <query>
+DELETE FROM HAK_COURSE_PLAN_WEEK
+ WHERE ORG_SECT  = <param name="ORG_SECT       " index="#" />
+   AND LEDG_YEAR = <param name="LEDG_YEAR      " index="#" />
+   AND LEDG_SESSN = <param name="LEDG_SESSN     " index="#" />
+   AND LSSN_CD = <param name="LSSN_CD        " index="#" />
+   AND SUBJT_NO = <param name="SUBJT_NO       " index="#" />
+    </query>
+   </executeQuery>     
+
+   <!--  수업계획서 존재 -->
+  <executeQuery id="getEclassPlanExists" statementType="pstmt" timeout="20000">
+    <query>
+SELECT COUNT(0) AS CNT 
+  FROM HAK_COURSE_PLAN
+ WHERE ORG_SECT  = <param name="ORG_SECT       " index="#" />
+   AND LEDG_YEAR = <param name="LEDG_YEAR      " index="#" />
+   AND LEDG_SESSN = <param name="LEDG_SESSN     " index="#" />
+   AND LSSN_CD = <param name="LSSN_CD        " index="#" />
+   AND SUBJT_NO = <param name="SUBJT_NO       " index="#" />
+    </query>
+   </executeQuery>  
+
+   <!--  강의년도 존재 -->
+  <executeQuery id="getEclassPlanYearList" statementType="pstmt" >
+    <query>   
+select ledg_year as year
+from hak_open_course 
+where ( emp_no =  <param name="session.prof_id" index="#"/>  
+        or    lssn_cd = <param name="session.kj_lssn_cd" index="#"/> 
+        or  subjt_nm = <param name="session.kj_subjt_nm" index="#"/>)
+group by ledg_year
+union
+select mng_year
+from E1_CLASS_YEAR
+group by mng_year
+order by year   
+    </query>
+   </executeQuery>   
+   
+   <!--  강의 과목 -->
+  <executeQuery id="getEclassPlanSubjectList" statementType="stmt" >
+    <query> 
+select org_sect,ledg_year, ledg_sessn,lssn_cd,subjt_no,subjt_nm,subjt_nm_en 
+     , case when org_sect = 'A' then '대학'
+            when org_sect = 'G' then '대학원'
+            else '기타' end org_sect_nm
+from hak_open_course 
+where ledg_year = <param name="SCH_YEAR" indx="#"/>
+  and ledg_sessn =  <param name="SCH_TERM" indx="#"/>
+  and ( emp_no =  <param name="session.prof_id" index="#"/>  
+        or    lssn_cd = <param name="session.kj_lssn_cd" index="#"/> 
+        or  subjt_nm = <param name="session.kj_subjt_nm" index="#"/>)
+    </query>
+   </executeQuery>   
+       
+       
+   <!--  강의년도 목록 -->
+  <executeQuery id="getHakCourseYearList" statementType="pstmt" >
+    <query>   
+select ledg_year as year
+from hak_open_course  
+group by ledg_year
+order by ledg_year desc   
+    </query>
+   </executeQuery>   
+
+   <!--  개설과목 학과 목록 -->
+  <executeQuery id="getHakCourseDeptList" statementType="pstmt" >
+    <query>  
+select nvl(CRS_STRCT_cd,'X') as dept_cd, nvl(CRS_STRCT_NM,'기타')  as dept_nm 
+from hak_open_course
+group by CRS_STRCT_cd,CRS_STRCT_NM
+order by  CRS_STRCT_NM   
+    </query>
+   </executeQuery>  
+      
+   <!--  강의 과목 -->
+  <executeQuery id="getHakCourseList" statementType="stmt" >
+    <query> 
+select *
+ from (       
+ select a.org_sect
+      ,a.ledg_year as year
+      ,a.ledg_sessn as term
+      ,a.lssn_cd,a.subjt_no,a.CAMPUS_NM,a.CRS_STRCT_NM  as dept_nm
+      ,a.subjt_nm,a.subjt_nm_en 
+      ,a.emp_no, a.emp_nm as PROF_NM,a.DVD_DEL_FLAG
+      ,b.lssn_cd as plan_lssn_cd
+      ,nvl(b.lssn_cd, 'N') as input_yn
+      ,case when b.lssn_cd is null then '미입력' else '입력' end input_yn_nm
+from hak_open_course a
+     ,hak_course_plan b 
+where a.ledg_year = <param name="SCH_YEAR" index="#"/>
+  and a.ledg_sessn =  <param name="SCH_TERM" index="#"/>
+  and a.org_sect = b.org_sect(+)
+  and a.ledg_year = b.ledg_year(+)
+  and a.ledg_sessn = b.ledg_sessn(+)
+  and a.lssn_cd = b.lssn_cd(+)
+  and a.subjt_no = b.subjt_no(+) 
+  <isNotEmpty property="SCH_SUBJT_NM">
+  and a.subjt_nm like <param name="SCH_SUBJT_NM" prefix="%" suffix="%"/>
+  </isNotEmpty>
+  <isNotEmpty property="SCH_PROF_NM">
+  and a.emp_nm like <param name="SCH_PROF_NM" prefix="%" suffix="%"/>
+  </isNotEmpty>
+  <isNotEmpty property="SCH_DEPT_CD">
+   <isEqual compareValue="X" property="SCH_DEPT_CD">
+    and a.CRS_STRCT_NM is null
+   </isEqual>
+   <isNotEqual compareValue="X" property="SCH_DEPT_CD">
+    and a.CRS_STRCT_CD = <param name="SCH_DEPT_CD" index="#"/>
+   </isNotEqual>
+  </isNotEmpty>
+  <isNotEmpty property="SCH_INPUT_YN">
+     <isEqual compareValue="N" property="SCH_INPUT_YN">
+     and b.lssn_cd is null
+     </isEqual>
+     <isNotEqual compareValue="N" property="SCH_INPUT_YN">
+      and b.lssn_cd is not null
+     </isNotEqual>
+  </isNotEmpty>
+  )
+  order by <param name="ODR" quote="no"/> 
+    </query>
+   </executeQuery> 
+   
+   <!--  강의 과목 -->
+  <executeQuery id="getHakCoursePlanList" statementType="stmt" >
+    <query> 
+select *
+ from (       
+SELECT
+ A.ORG_SECT,A.LEDG_YEAR,A.LEDG_SESSN,A.LSSN_CD,A.SUBJT_NO
+,NVL(B.crs_strct_nm ,A.DEPT_NM) AS DEPT_NM
+,A.UNIT_NUM,A.LSSN_NUM,A.EMP_NO
+,A.LEC_TRGT,A.SANG_TM,A.LEC_CONTACT,A.ROOM_TEL,A.HAND_TEL,A.EMAIL
+,A.LEC_OUTLINE,A.LEC_OBJECT,A.LEC_SUBJECT,A.MID_RAT,A.END_RAT,A.QUIZ_RAT
+,A.REPORT_RAT,A.ATT_RAT,A.ETC_NM1,A.ETC_RAT1,A.ETC_NM2,A.ETC_RAT2
+,A.ETC_NM3,A.ETC_RAT3,A.ETC_NM4,A.ETC_RAT4,A.ETC_NM5,A.ETC_RAT5
+,A.MAIN_MAT_NM1,A.MAIN_MAT_AUTH1,A.MAIN_MAT_COM1,A.MAIN_MAT_YY1
+,A.MAIN_MAT_NM2,A.MAIN_MAT_AUTH2,A.MAIN_MAT_COM2,A.MAIN_MAT_YY2
+,A.MAIN_MAT_NM3,A.MAIN_MAT_AUTH3,A.MAIN_MAT_COM3,A.MAIN_MAT_YY3
+,A.SUB_MAT_NM1,A.SUB_MAT_AUTH1,A.SUB_MAT_COM1,A.SUB_MAT_YY1
+,A.SUB_MAT_NM2,A.SUB_MAT_AUTH2,A.SUB_MAT_COM2,A.SUB_MAT_YY2
+,A.SUB_MAT_NM3,A.SUB_MAT_AUTH3,A.SUB_MAT_COM3,A.SUB_MAT_YY3
+,A.SUB_MAT_NM4,A.SUB_MAT_AUTH4,A.SUB_MAT_COM4,A.SUB_MAT_YY4
+,A.SUB_MAT_NM5,A.SUB_MAT_AUTH5,A.SUB_MAT_COM5,A.SUB_MAT_YY5
+,A.ETC_MAT_NM,A.USE_PROGRAM,A.LEC_SYS01,A.LEC_SYS02,A.LEC_SYS03
+,A.LEC_SYS04,A.LEC_SYS05,A.LEC_SYS06,A.LEC_SYS07,A.LEC_SYS08,A.LEC_SYS09
+,A.LEC_SYS10,A.LEC_SYS11,A.LEC_SYS12,A.LEC_SYS13,A.CNFM_FG
+,B.EMP_NM AS NAME
+,B.EMP_NM AS prof_nm
+,B.DAY_TIME
+,B.SUBJT_NM AS SUBJT_NA_KR
+,B.SUBJT_NM AS SUBJT_NM
+,B.SUBJT_NM_EN AS SUBJT_NM_EN
+--,B.UNIT_NUM
+--,B.LSSN_NUM
+,B.crs_strct_nm  
+,B.COMPT_FLD_SNA
+,C.DEPT_NM AS DEPT_L_NM
+,nvl(A.lssn_cd, 'N') as input_yn
+FROM HAK_COURSE_PLAN A, HAK_OPEN_COURSE B, HAK_USER_INFO C
+WHERE A.LEDG_YEAR = <param name="SCH_YEAR" index="#"/>
+  AND A.LEDG_SESSN = <param name="SCH_TERM" index="#"/>
+  and A.org_sect = B.org_sect
+  and A.ledg_year = B.ledg_year
+  and A.ledg_sessn = B.ledg_sessn
+  and A.lssn_cd = B.lssn_cd
+  and A.subjt_no = B.subjt_no 
+  AND B.EMP_NO = C.USER_ID
+  <isNotEmpty property="SCH_SUBJT_NM">
+  and B.subjt_nm like <param name="SCH_SUBJT_NM" prefix="%" suffix="%"/>
+  </isNotEmpty>
+  <isNotEmpty property="SCH_PROF_NM">
+  and B.emp_nm like <param name="SCH_PROF_NM" prefix="%" suffix="%"/>
+  </isNotEmpty>
+  <isNotEmpty property="SCH_DEPT_CD">
+   <isEqual compareValue="X" property="SCH_DEPT_CD">
+    and B.CRS_STRCT_NM is null
+   </isEqual>
+   <isNotEqual compareValue="X" property="SCH_DEPT_CD">
+    and B.CRS_STRCT_CD = <param name="SCH_DEPT_CD" index="#"/>
+   </isNotEqual>
+  </isNotEmpty>
+  <isNotEmpty property="SCH_INPUT_YN">
+     <isEqual compareValue="N" property="SCH_INPUT_YN">
+     and A.lssn_cd is null
+     </isEqual>
+     <isNotEqual compareValue="N" property="SCH_INPUT_YN">
+      and A.lssn_cd is not null
+     </isNotEqual>
+  </isNotEmpty>
+  )
+  order by <param name="ORDR" quote="no"/> 
+    </query>
+   </executeQuery> 
+ 
+ <!-- 강의계획서 입력현황 -->
+ <executeQuery statementType="stmt" id="getHakCoursePlanStatList">
+   <query>
+select   A.org_sect, A.ledg_year, A.ledg_sessn, A.CRS_STRCT_CD
+       , A.CRS_STRCT_NM,  NVL(A.TOTAL_CNT,0) AS TOTAL_CNT
+       , NVL(B.NOT_INPUT_CNT,0) AS NOT_INPUT_CNT
+       , NVL(C.INPUT_CNT,0) AS INPUT_CNT
+       , CASE WHEN  NVL(B.NOT_INPUT_CNT,0)+ NVL(C.INPUT_CNT,0) = 0 THEN 0
+              ELSE  ROUND((NVL(C.INPUT_CNT,0)/NVL(A.TOTAL_CNT,0))*100, 2) END AS INPUT_RT
+  from  
+         (
+              select  a.org_sect,a.ledg_year,a.ledg_sessn, nvl(a.crs_strct_cd,'X') as crs_strct_cd
+                    , nvl(a.CRS_STRCT_NM,'기타') as CRS_STRCT_NM, count(0) as TOTAL_CNT
+                FROM  hak_open_course A
+               where a.ledg_year = <param name="SCH_YEAR" index="#"/>
+                 and a.ledg_sessn = <param name="SCH_TERM" index="#"/> 
+               group by a.org_sect,a.ledg_year,a.ledg_sessn,a.crs_strct_cd, a.CRS_STRCT_NM
+         ) A,      
+         (
+            select  a.org_sect,a.ledg_year,a.ledg_sessn, nvl(a.crs_strct_cd,'X') as crs_strct_cd
+                  , nvl(a.CRS_STRCT_NM,'기타') as CRS_STRCT_NM, count(0) as not_input_cnt
+              from hak_open_course a,
+                   hak_course_plan b
+            where a.ledg_year = <param name="SCH_YEAR" index="#"/>
+              and a.ledg_sessn = <param name="SCH_TERM" index="#"/>
+              and A.ORG_SECT = b.org_sect(+)
+              and a.ledg_year = b.ledg_year(+)
+              and a.ledg_sessn = b.ledg_sessn(+)
+              and A.LSSN_CD = b.lssn_cd(+)
+              and A.SUBJT_NO = b.SUBJT_NO(+)
+              and b.org_sect is null
+            group by a.org_sect,a.ledg_year,a.ledg_sessn,a.crs_strct_cd, a.CRS_STRCT_NM
+         ) B,
+         (
+            select a.org_sect,a.ledg_year,a.ledg_sessn, nvl(a.crs_strct_cd,'X') as crs_strct_cd
+                 , nvl(a.CRS_STRCT_NM,'기타') as CRS_STRCT_NM, count(0) as input_cnt
+              from hak_open_course a,
+                   hak_course_plan b
+            where a.ledg_year = <param name="SCH_YEAR" index="#"/>
+              and a.ledg_sessn = <param name="SCH_TERM" index="#"/>
+              and A.ORG_SECT = b.org_sect
+              and a.ledg_year = b.ledg_year
+              and a.ledg_sessn = b.ledg_sessn
+              and A.LSSN_CD = b.lssn_cd
+              and A.SUBJT_NO = b.SUBJT_NO
+            group by a.org_sect,a.ledg_year,a.ledg_sessn,a.crs_strct_cd, a.CRS_STRCT_NM
+         ) C
+where A.org_sect = B.ORG_SECT(+)
+  and A.ORG_SECT = B.org_sect(+) 
+  and A.ledg_year = B.ledg_year(+) 
+  and A.ledg_sessn = B.ledg_sessn (+)
+  and A.crs_strct_cd = B.crs_strct_cd(+)
+  AND A.org_sect = C.ORG_SECT(+)
+  and A.ORG_SECT = C.org_sect(+) 
+  and A.ledg_year = C.ledg_year(+) 
+  and A.ledg_sessn = C.ledg_sessn (+)
+  and A.crs_strct_cd = C.crs_strct_cd(+)
+<isNotEmpty property="SCH_ORG_SECT">
+  and a.org_sect = <param name="SCH_ORG_SECT" index="#"/>
+</isNotEmpty>    
+ order by A.org_sect, A.crs_strct_cd   
+   </query>
+ </executeQuery>          
+ 
+  <!-- 강의 평가 결과 조회 -->
+  <executeQuery id="getHakCourseEvalView" statementType="stmt" >
+    <query>  
+select ledg_year, ledg_sessn, compt_fld_na_cd, compt_fld_na_nm, eval_jumsu
+      ,EVAL_YEAR,EVAL_SESSN
+ from HAK_COURSE_EVAL_RESULT 
+where lssn_cd = <param name="LSSN_CD" index="#"/>
+  and emp_no = <param name="EMP_NO" index="#"/>
+  AND LEDG_YEAR = <param name="LEDG_YEAR" index="#"/>
+  AND LEDG_SESSN = <param name="LEDG_SESSN" index="#" />
+  
+   </query>
+ </executeQuery>            
+</sqlx>

@@ -1,0 +1,13 @@
+#Fri Oct 18 14:05:12 KST 2013
+fixTomcatHomeBug=fixed
+contextsDir=D\:\\webserver\\apache-tomcat-6.0.35\\conf\\Catalina\\localhost
+tomcatDir=D\:\\webserver\\apache-tomcat-6.0.35
+computeSourcePath=true
+configMode=serverFile
+tomcatJRE=1289883436040
+jvmParameters=-Doracle.jdbc.defaultNChar%3Dtrue;
+tomcatConfigFile=D\:\\webserver\\apache-tomcat-6.0.35\\conf\\server.xml
+eclipse.preferences.version=1
+tomcatVersion=tomcatV6
+managerUrl=http\://localhost\:8080/manager
+projectsInSourcePath=ilos3.2_01;ilos3.3_00;ilos3.3_01;

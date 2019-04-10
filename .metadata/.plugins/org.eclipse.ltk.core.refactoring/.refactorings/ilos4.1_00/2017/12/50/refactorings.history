@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Move &apos;attendance_list_pdf_form.jsp&apos; to &apos;course&apos;" description="Move &apos;attendance_list_pdf_form.jsp&apos; to &apos;course&apos;" destination="webapp/WEB-INF/jsp/pf/course" element1="webapp/WEB-INF/resources/acl/file/ilos/pf/course/attendance_list_pdf_form.jsp" flags="7" id="org.eclipse.ltk.core.refactoring.move.resources" resources="1" stamp="1513240428791" updateReferences="true"/>
+</session>

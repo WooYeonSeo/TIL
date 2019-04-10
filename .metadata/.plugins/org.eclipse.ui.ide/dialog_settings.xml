@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<list key="installedFeatures">
+		<item value="org.eclipse.cvs:1.1.101.R35x_v20100125-7E79FGD9kKF67BPDZ7PKCE1911"/>
+		<item value="org.eclipse.datatools.common.doc.user:1.7.2.v200909251450-26-311A16321A3557"/>
+		<item value="org.eclipse.datatools.connectivity.doc.user:1.7.2.v200909251450-37D-7733L3D753L7BBF"/>
+		<item value="org.eclipse.datatools.connectivity.feature:1.7.2.v200909251450-7B7OANEn1Xi4gycmhPC6njFVDz0q"/>
+		<item value="org.eclipse.datatools.connectivity.oda.designer.feature:1.7.2.v200909251450-7E7C7BDZRDIVDUKiEaXU"/>
+		<item value="org.eclipse.datatools.connectivity.oda.feature:1.7.2.v200909251450-7H797BCcNBHBBHMWDbRK"/>
+		<item value="org.eclipse.datatools.doc.user:1.7.2.v200909251450-47C08w95ENAK6AFDFK7"/>
+		<item value="org.eclipse.datatools.enablement.apache.derby.feature:1.7.2.v200909251450-7768dBmKDLfMjHuIFJW7SBI"/>
+		<item value="org.eclipse.datatools.enablement.feature:1.7.2.v200909251450-7J8i7UBWwSLRWdU50unZvFu_Pz0t"/>
+		<item value="org.eclipse.datatools.enablement.hsqldb.feature:1.7.2.v200909251450-67B2AqGBJVKbGuH3GP7SBI"/>
+		<item value="org.eclipse.datatools.enablement.ibm.feature:1.7.2.v200909251450-7F47HFC7sRTNSjXAYIRR"/>
+		<item value="org.eclipse.datatools.enablement.ingres.feature:1.7.2.v200909251450-540AkF77g7VBLBPH7"/>
+		<item value="org.eclipse.datatools.enablement.jdbc.feature:1.7.2.v200909251450-4-29oB55W5P7G6RAH"/>
+		<item value="org.eclipse.datatools.enablement.jdt.feature:1.7.2.v200909251450-2-07w311A1A351453"/>
+		<item value="org.eclipse.datatools.enablement.msft.feature:1.7.2.v200909251450-542AkF78Y7SBU9UAB"/>
+		<item value="org.eclipse.datatools.enablement.mysql.feature:1.7.2.v200909251450-546AkF78Y7R9PAX87"/>
+		<item value="org.eclipse.datatools.enablement.oda.designer.feature:1.7.2.v200909251450-3328s7353356I4F53"/>
+		<item value="org.eclipse.datatools.enablement.oda.feature:1.7.2.v200909251450-7A7T78DZRDFuD_KmFcNp"/>
+		<item value="org.eclipse.datatools.enablement.oracle.feature:1.7.2.v200909251450-548aAkF77g7XAO9aBB"/>
+		<item value="org.eclipse.datatools.enablement.postgresql.feature:1.7.2.v200909251450-542AkF77g7V9N9e77"/>
+		<item value="org.eclipse.datatools.enablement.sap.feature:1.7.2.v200909251450-540AkF77g7V9N9e77"/>
+		<item value="org.eclipse.datatools.enablement.sqlite.feature:1.7.2.v200909251450-541AkF79P7N8NAQ97"/>
+		<item value="org.eclipse.datatools.enablement.sybase.feature:1.7.2.v200909251450-7E45F9NiNWvOOXxPdVT"/>
+		<item value="org.eclipse.datatools.intro:1.7.2.v200909251450-26-7w311A17142212"/>
+		<item value="org.eclipse.datatools.modelbase.feature:1.7.2.v200909251450-77-5CcNBCtCcCQJYZl"/>
+		<item value="org.eclipse.datatools.sqldevtools.ddlgen.feature:1.7.2.v200909251450-7A-1F7RZHKFIwMhStRm"/>
+		<item value="org.eclipse.datatools.sqldevtools.feature:1.7.2.v200909251450-7N7q7GFDr_mX5M8JAs38u8wWDRWU"/>
+		<item value="org.eclipse.datatools.sqldevtools.parsers.feature:1.7.2.v200909251450-602BgJ99q9_9OGXFJ"/>
+		<item value="org.eclipse.datatools.sqltools.doc.user:1.7.2.v200909251450-37D-7733L3D753L7BBF"/>
+		<item value="org.eclipse.draw2d:3.6.1.v20100908-1100-4507w31211A2403131"/>
+		<item value="org.eclipse.emf.codegen.ecore.ui:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf.codegen.ecore:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf.codegen.ui:2.4.0.v200906151043"/>
+		<item value="org.eclipse.emf.codegen:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf.common.ui:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf.common:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf.converter:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf.databinding.edit:1.1.0.v200906151043"/>
+		<item value="org.eclipse.emf.databinding:1.1.0.v200906151043"/>
+		<item value="org.eclipse.emf.ecore.edit:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf.ecore.editor:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf.ecore:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf.edit.ui:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf.edit:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf.mapping.ecore.editor:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf.mapping.ecore:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf.mapping.ui:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf.mapping:2.5.0.v200906151043"/>
+		<item value="org.eclipse.emf:2.5.0.v200906151043"/>
+		<item value="org.eclipse.gef:3.6.1.v20100908-1100-777B181A3Bz-6B663E7974242"/>
+		<item value="org.eclipse.help:1.1.1.R35x_v20090811-7e7eFAnFEx2XZoYz0uPgIfwD"/>
+		<item value="org.eclipse.jdt:3.5.2.r352_v20100108-7r88FEwFI0WTuoBl0iaG0tyhfZH6"/>
+		<item value="org.eclipse.jpt.eclipselink.feature:2.2.2.v200911250220-65A9AkF77g8OFL7BB7"/>
+		<item value="org.eclipse.jpt.feature:2.2.2.v200911250220-7L7OAPFBBoPS0TBgXV1je"/>
+		<item value="org.eclipse.jst.common.fproj.enablement.jdt:3.1.1.v200908111817-37718s733L56485K8H"/>
+		<item value="org.eclipse.jst.enterprise_ui.feature:3.1.1.v200908101600-7_7EGrjFQRwRb4P511ebObS5XZhq"/>
+		<item value="org.eclipse.jst.ws.axis2tools.feature:1.1.0.v200905242110-78-FBpDZRDE6FdPdLYYe"/>
+		<item value="org.eclipse.mylyn.bugzilla_feature:3.4.2.v20100916-0100-e3x-7D773BgJ9DH9fCc4CICE1"/>
+		<item value="org.eclipse.mylyn.context_feature:3.4.2.v20100916-0100-e3x-777718s73533L3L135331"/>
+		<item value="org.eclipse.mylyn.ide_feature:3.4.2.v20100916-0100-e3x-7G7J2BgJ9E99jDd49E994"/>
+		<item value="org.eclipse.mylyn.java_feature:3.4.2.v20100916-0100-e3x-7D7F-AkF7B77V7c37B773"/>
+		<item value="org.eclipse.mylyn.team_feature:3.4.2.v20100916-0100-e3x-4317w31211A1A012110"/>
+		<item value="org.eclipse.mylyn.wikitext_feature:1.3.2.v20100916-0100-e3x-7F7e1FC7sReRSnX-DReRRD"/>
+		<item value="org.eclipse.mylyn_feature:3.4.2.v20100916-0100-e3x-7Z7f77FBBoPbPQeUoFeZXJ8"/>
+		<item value="org.eclipse.pde:3.5.2.R35x_v20100119-7Z7_FA2FDX-aXQYWqYDBz-z0qufo"/>
+		<item value="org.eclipse.persistence.jpa:1.1.3.v20091002-r5404"/>
+		<item value="org.eclipse.persistence.moxy:1.1.3.v20091002-r5404"/>
+		<item value="org.eclipse.persistence.sdo:1.1.3.v20091002-r5404"/>
+		<item value="org.eclipse.rcp:3.5.1.R35x_v20090811-9SA0FxVFqE70OL1ARMrfcO6e7BA6"/>
+		<item value="org.eclipse.rse.core:3.1.1.v200907301400-7a7CEwFC7sRTNSwodfv_u"/>
+		<item value="org.eclipse.rse.dstore:3.1.1.v200907301400-7L6EsEVVFGMG4TyOVFU"/>
+		<item value="org.eclipse.rse.ftp:3.0.101.v200909160005-780A89oB55W5OAP9A9I"/>
+		<item value="org.eclipse.rse.local:2.1.101.v200907301400-7B4EqBgJ99r9dJ_GM9E"/>
+		<item value="org.eclipse.rse.ssh:3.0.1.v200909160005-7A2BhAkF77g7VEYDG7C"/>
+		<item value="org.eclipse.rse.telnet:2.2.1.v200908051630-7730AkF77g7UDXELEF"/>
+		<item value="org.eclipse.rse.terminals:1.0.2.R31x_v200911051655-77-49uC8Ez-BY3y4QIE224382252"/>
+		<item value="org.eclipse.rse.useractions:1.1.100.v200905272300-31A78s733L3D7H7933"/>
+		<item value="org.eclipse.rse:3.1.2.R31x_v200911051655-7L5AF8wqaIPUdtOM8wtNiNh0Rez-"/>
+		<item value="org.eclipse.team.svn.mylyn.source:0.7.9.I20100512-1900"/>
+		<item value="org.eclipse.team.svn.mylyn:0.7.9.I20100512-1900"/>
+		<item value="org.eclipse.team.svn.nl1.sources:0.7.9.I20100512-1900"/>
+		<item value="org.eclipse.team.svn.nl1:0.7.9.I20100512-1900"/>
+		<item value="org.eclipse.team.svn.resource.ignore.rules.jdt.source:0.7.9.I20100512-1900"/>
+		<item value="org.eclipse.team.svn.resource.ignore.rules.jdt:0.7.9.I20100512-1900"/>
+		<item value="org.eclipse.team.svn.revision.graph.source:0.7.9.I20100917-1700"/>
+		<item value="org.eclipse.team.svn.revision.graph:0.7.9.I20100917-1700"/>
+		<item value="org.eclipse.tm.terminal.ssh:2.0.100.v200905272300-3-8Z7w311A16383411"/>
+		<item value="org.eclipse.tm.terminal.telnet:2.0.101.v200907301400-3-8_7w311A1A271116"/>
+		<item value="org.eclipse.tm.terminal.view:2.0.101.v200907301400-3-8_7w311A18412511"/>
+		<item value="org.eclipse.tm.terminal:3.0.2.R31x_v200911051655-4-17S42yaw312113271141"/>
+		<item value="org.eclipse.wst.common.fproj:3.1.1.v200908111817-37718s733L4C585I7F"/>
+		<item value="org.eclipse.wst.jsdt.feature:1.1.2.v200908101420-77-FGDCcNBDjBXMoBbFb"/>
+		<item value="org.eclipse.wst.web_ui.feature:3.1.1.v200908120400-7R77FStEVw2z07WtDz-OZrhL5C-3"/>
+		<item value="org.eclipse.wst.xml_ui.feature:3.1.1.v200907161031-7H6FMbDxtkMs9OeLGF98LRhdPKeo"/>
+		<item value="org.eclipse.wst.xsl.feature:1.0.2.v200908271520-7R7T8sFIhIehWg454rq_U1"/>
+		<item value="org.polarion.eclipse.team.svn.connector.javahl16:2.2.2.I20100917-1700"/>
+		<item value="org.polarion.eclipse.team.svn.connector:2.2.2.I20101001-1700"/>
+	</list>
+	<section name="CleanDialogSettings">
+		<item value="500" key="DIALOG_WIDTH"/>
+		<item value="true" key="TOGGLE_SELECTED"/>
+		<item value="378" key="DIALOG_HEIGHT"/>
+		<item value="153" key="DIALOG_Y_ORIGIN"/>
+		<item value="394" key="DIALOG_X_ORIGIN"/>
+	</section>
+	<section name="ExternalProjectImportWizard">
+		<item value="false" key="WizardProjectsImportPage.STORE_COPY_PROJECT_ID"/>
+		<item value="false" key="WizardProjectsImportPage.STORE_ARCHIVE_SELECTED"/>
+	</section>
+	<section name="WORKBENCH_SETTINGS">
+		<list key="ENABLED_TRANSFERS">
+		</list>
+	</section>
+	<section name="ResourceNavigator">
+		<item value="Aggregate for window 1320388889234" key="ResourceWorkingSetFilter.STORE_WORKING_SET"/>
+		<item value="1" key="ResourceViewer.STORE_SORT_TYPE"/>
+		<item value="true" key="LINK_NAVIGATOR_TO_EDITOR"/>
+	</section>
+	<section name="NewWizardAction">
+		<item value="org.eclipse.jst.servlet.ui.project.facet.WebProjectWizard" key="NewWizardSelectionPage.STORE_SELECTED_ID"/>
+		<list key="NewWizardSelectionPage.STORE_EXPANDED_CATEGORIES_ID">
+			<item value="org.eclipse.ui.Basic"/>
+			<item value="org.eclipse.jdt.ui.java"/>
+			<item value="org.eclipse.wst.web.ui"/>
+		</list>
+	</section>
+	<section name="ChooseWorkspaceDialogSettings">
+		<item value="239" key="DIALOG_Y_ORIGIN"/>
+		<item value="334" key="DIALOG_X_ORIGIN"/>
+	</section>
+	<section name="org.eclipse.ui.dialogs.FilteredResourcesSelectionDialog">
+		<item value="true" key="ShowStatusLine"/>
+		<item value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#x0D;&#x0A;&lt;workingSet workingSetName=&quot;&quot;/&gt;" key="WorkingSet"/>
+		<item value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#x0D;&#x0A;&lt;History&gt;&#x0D;&#x0A;&lt;historyRootNode&gt;&#x0D;&#x0A;&lt;infoNode path=&quot;/ilos/doc/03.개발/07.실제환경/env.properties&quot; type=&quot;1&quot;/&gt;&#x0D;&#x0A;&lt;infoNode path=&quot;/ilos/doc/03.개발/07.실제환경/kijong_pool.properties&quot; type=&quot;1&quot;/&gt;&#x0D;&#x0A;&lt;infoNode path=&quot;/ilos/webapp/WEB-INF/resources/env.properties&quot; type=&quot;1&quot;/&gt;&#x0D;&#x0A;&lt;infoNode path=&quot;/ilos/webapp/WEB-INF/resources/kijong_pool.properties&quot; type=&quot;1&quot;/&gt;&#x0D;&#x0A;&lt;/historyRootNode&gt;&#x0D;&#x0A;&lt;/History&gt;" key="History"/>
+		<item value="false" key="ShowDerived"/>
+		<section name="DialogBoundsSettings">
+			<item value="600" key="DIALOG_WIDTH"/>
+			<item value="1|맑은 고딕|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|맑은 고딕" key="DIALOG_FONT_NAME"/>
+			<item value="513" key="DIALOG_HEIGHT"/>
+			<item value="400" key="DIALOG_Y_ORIGIN"/>
+			<item value="979" key="DIALOG_X_ORIGIN"/>
+		</section>
+	</section>
+	<section name="SaveAsDialogSettings">
+		<item value="525" key="DIALOG_WIDTH"/>
+		<item value="1|맑은 고딕|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|맑은 고딕" key="DIALOG_FONT_NAME"/>
+		<item value="579" key="DIALOG_HEIGHT"/>
+		<item value="162" key="DIALOG_Y_ORIGIN"/>
+		<item value="706" key="DIALOG_X_ORIGIN"/>
+	</section>
+</section>

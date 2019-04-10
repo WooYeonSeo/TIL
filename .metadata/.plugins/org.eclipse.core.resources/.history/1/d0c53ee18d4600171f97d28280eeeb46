@@ -1,0 +1,3331 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE SQLX PUBLIC
+       "-//AIMAXSOFT co//DTD SQLX 2.0//EN"
+       "http://www.aimaxsoft.co.kr/framework/dtds/sqlx_2_0.dtd">
+
+
+<sqlx>
+  <!-- 차시 총 수 -->
+  <executeQuery id="getWeekTimeTotalCnt"  statementType="pstmt">
+    <query>
+     SELECT COUNT(0) AS TOT_WEEK_TIME_CNT 
+      FROM E1_WEEK_TIME   
+    </query>
+  </executeQuery>
+    
+  <!-- 출석마스터 정보-->
+  <executeQuery id="getAttendMstInfo"  statementType="pstmt">
+    <query>
+      SELECT A.KJKEY    
+             ,A.ATTEND_NO       
+             ,A.WEEK_NO       
+             ,A.WEEK_TIME       
+             ,A.ATTEND_MST_DIV     
+             ,A.ATTEND_DT     
+             ,A.LECT_CANCEL_WEEK_NO       
+             ,A.LECT_CANCEL_WEEK_TIME       
+             ,A.LECT_CANCEL_ATTEND_DT
+             ,B.ATTEND_NO AS LECT_CANCEL_ATTEND_NO         
+             ,B.LECT_CANCEL_RSN_CD     
+             ,B.LECT_CANCEL_RSN_NOTE        
+             ,(SELECT CASE WHEN X.ETC_REG_YN = 'Y' 
+                           THEN NULL 
+                           ELSE X.RSN_NM 
+                       END AS RSN_NM 
+                 FROM E1_LECT_CANCEL_RSN_CODE X 
+                WHERE X.RSN_CD = B.LECT_CANCEL_RSN_CD) AS LECT_CANCEL_RSN_NM  
+             ,(SELECT X.ETC_REG_YN 
+                 FROM E1_LECT_CANCEL_RSN_CODE X 
+                WHERE X.RSN_CD = B.LECT_CANCEL_RSN_CD) AS ETC_REG_YN
+             ,A.REG_ID                             
+             ,A.REG_DTM                            
+             ,A.UPT_ID                             
+             ,A.UPT_DTM                            
+             ,A.USER_AGENT                         
+             ,A.REG_IP                             
+             ,A.UPT_IP                             
+             ,(SELECT X.LECTURE_WEEKS
+                 FROM E1_LECTURE_WEEKS X
+                WHERE A.KJKEY = X.KJKEY
+                  AND A.ATTEND_NO = X.ATTEND_NO) AS LECTURE_WEEKS
+        FROM E1_CLASS_ATTEND_MST A 
+             ,E1_CLASS_ATTEND_MST B --휴강
+       WHERE A.KJKEY = <param name="session.kjkey" index="#"/>
+         AND A.ATTEND_NO = <param name="ATTEND_NO" index="#"/>   
+         AND A.KJKEY = B.KJKEY(+)    
+         AND A.LECT_CANCEL_WEEK_NO = B.WEEK_NO(+)
+         AND A.LECT_CANCEL_WEEK_TIME = B.WEEK_TIME(+)
+    </query>
+  </executeQuery>  
+  
+  <!-- 개설과목 주차목록 가져오기-->
+  <executeQuery id="getClassWeekList"  statementType="pstmt">
+    <query>
+      SELECT A.KJKEY
+             ,A.WEEK_NO
+             ,A.ST_DT
+             ,A.ED_DT
+             ,A.ST_DT AS WEEK_ST_DT
+             ,A.ED_DT AS WEEK_ED_DT
+             ,(SELECT X.MAIN_DIV FROM E1_CLASS_LECTURE X WHERE A.KJKEY = X.KJKEY) AS MAIN_DIV
+             ,CASE WHEN TO_CHAR(SYSDATE, 'YYYYMMDD') BETWEEN A.ST_DT AND A.ED_DT
+                   THEN 'Y'
+                   ELSE 'N'
+                   END AS CUR_WEEK     
+        FROM E1_CLASS_WEEK_NO A 
+       WHERE A.KJKEY = <param name="session.kjkey" index="#"/>
+       <isEqual compareValue="view" property="ACT_DIV">
+         AND A.WEEK_NO = <param name="WEEK_NO" index="#"/>
+       </isEqual>
+       ORDER BY A.WEEK_NO  
+    </query>
+  </executeQuery>
+   
+  <!-- 년도설정된 주차정보 -->  
+  <executeQuery id="getDefWeekList"  statementType="pstmt">
+    <query>
+      SELECT 
+              A.WEEK_NO
+             ,A.ST_DT
+             ,A.ED_DT
+             ,A.ST_DT AS WEEK_ST_DT
+             ,A.ED_DT AS WEEK_ED_DT
+             ,CASE WHEN TO_CHAR(SYSDATE, 'YYYYMMDD') BETWEEN A.ST_DT AND A.ED_DT
+                   THEN 'Y'
+                   ELSE 'N'
+                   END AS CUR_WEEK      
+        FROM e1_class_normal_week A
+       WHERE year = <param name="session.kj_year" index="#"/>
+         AND term = <param name="session.kj_term" index="#"/>
+       <isEqual compareValue="view" property="ACT_DIV">
+         AND A.WEEK_NO = <param name="WEEK_NO" index="#"/>
+       </isEqual>         
+       ORDER BY A.WEEK_NO
+    </query>
+  </executeQuery>    
+  
+   <!-- 차시정보 -->  
+  <executeQuery id="getWeekTimeList"  statementType="pstmt">
+    <query>
+SELECT  A.WEEK_TIME_NO, A.WEEK_TIME_NM,B.ATTEND_DT
+ FROM (
+        SELECT WEEK_TIME_NO, WEEK_TIME_NM
+          FROM E1_WEEK_TIME A
+              ,(   
+               SELECT KJKEY,WEEK_TIME, WEEK_NO
+                 FROM E1_CLASS_ATTEND_MST 
+                WHERE KJKEY = <param name="session.kjkey" index="#"/>
+                  AND WEEK_NO =  <param name="WEEK_NO" index="#"/> 
+                  AND LECT_CANCEL_WEEK_NO IS NULL
+               ) B
+        WHERE A.WEEK_TIME_NO = B.WEEK_TIME(+)
+          AND B.KJKEY IS NULL
+        UNION
+        SELECT  A.WEEK_TIME_NO, A.WEEK_TIME_NM
+         FROM E1_CLASS_ATTEND_MST B, E1_WEEK_TIME A
+        WHERE B.KJKEY = <param name="session.kjkey" index="#"/>
+          AND B.ATTEND_NO =  <param name="ATTEND_NO" index="#"/>
+          AND B.WEEK_TIME = A.WEEK_TIME_NO 
+          AND B.LECT_CANCEL_WEEK_NO IS NULL 
+      ) A
+      ,(
+          SELECT  WEEK_TIME, ATTEND_DT
+            FROM E1_CLASS_ATTEND_MST
+           WHERE KJKEY =  <param name="session.kjkey" index="#"/>
+             AND WEEK_NO = <param name="WEEK_NO" index="#"/>     
+        ) B
+ WHERE A.WEEK_TIME_NO = B.WEEK_TIME(+)  
+   AND '1' = CASE WHEN  <param name="ATTEND_NO" index="#"/> IS NULL OR A.WEEK_TIME_NO = <param name="WEEK_TIME" index="#"/>
+                  THEN '1'
+                  ELSE CASE WHEN ATTEND_DT IS NULL THEN '1' ELSE '0' END END      
+ ORDER BY  A.WEEK_TIME_NO
+    </query>
+  </executeQuery>  
+  
+   <!-- 차시정보(휴강, 중간,기말 차시 정보 가져오기) -->  
+  <executeQuery id="getWeekTimeList2"  statementType="pstmt">
+    <query>
+SELECT  A.WEEK_TIME_NO, A.WEEK_TIME_NM,B.ATTEND_DT
+ FROM (
+        SELECT WEEK_TIME_NO, WEEK_TIME_NM
+          FROM E1_WEEK_TIME A
+              ,(   
+               SELECT KJKEY,WEEK_TIME, WEEK_NO
+                 FROM E1_CLASS_ATTEND_MST 
+                WHERE KJKEY = <param name="session.kjkey" index="#"/>
+                  AND WEEK_NO =  <param name="WEEK_NO" index="#"/> 
+                  AND LECT_CANCEL_WEEK_NO IS NULL
+               ) B
+        WHERE A.WEEK_TIME_NO = B.WEEK_TIME(+)
+          AND B.KJKEY IS NULL
+        UNION
+        SELECT  A.WEEK_TIME_NO, A.WEEK_TIME_NM
+         FROM E1_CLASS_ATTEND_MST B, E1_WEEK_TIME A
+        WHERE B.KJKEY = <param name="session.kjkey" index="#"/>
+          AND B.ATTEND_NO =  <param name="ATTEND_NO" index="#"/>
+          AND B.WEEK_TIME = A.WEEK_TIME_NO 
+          AND B.LECT_CANCEL_WEEK_NO IS NULL 
+      ) A
+      ,(
+          SELECT  WEEK_TIME, ATTEND_DT
+            FROM E1_CLASS_ATTEND_MST
+           WHERE KJKEY =  <param name="session.kjkey" index="#"/>
+             AND ATTEND_MST_DIV IS NULL
+             AND WEEK_NO = <param name="WEEK_NO" index="#"/>     
+        ) B
+ WHERE A.WEEK_TIME_NO = B.WEEK_TIME(+)    
+ ORDER BY  A.WEEK_TIME_NO
+    </query>
+  </executeQuery>   
+  
+   <!-- 대체출석차시정보 -->  
+  <executeQuery id="getReplaceWeekTimeView"  statementType="pstmt">
+    <query>
+ 
+    SELECT  WEEK_TIME, ATTEND_DT
+       FROM E1_CLASS_ATTEND_MST
+      WHERE KJKEY =  <param name="session.kjkey" index="#"/>
+        AND ATTEND_MST_DIV IS NULL
+        AND WEEK_NO = <param name="WEEK_NO" index="#"/>     
+ 
+    </query>
+  </executeQuery>      
+   
+  <!-- 출석마스터목록 -->
+  <executeQuery id="getAttendanceMstList" statementType="stmt">
+    <query> 
+ SELECT  A.KJKEY
+        ,A.ATTEND_NO
+        ,A.WEEK_NO
+        ,A.WEEK_TIME
+        ,A.ATTEND_MST_DIV
+        ,CASE WHEN A.ATTEND_MST_DIV = '3' THEN '2' 
+              WHEN A.ATTEND_MST_DIV = '6' THEN '3'
+              ELSE '1' END ON_OFF_DIV        
+        ,A.ATTEND_DT
+        ,CASE WHEN A.LECT_CANCEL_WEEK_NO > 0 THEN 'Y'
+             ELSE 'N' END AS LECT_SUPPLY_YN 
+        ,A.LECT_CANCEL_WEEK_NO
+        ,A.LECT_CANCEL_WEEK_TIME
+        ,A.LECT_CANCEL_ATTEND_DT
+        ,A.LECT_CANCEL_RSN_CD
+        ,A.LECT_CANCEL_RSN_NOTE
+        ,A.REG_ID
+        ,A.REG_DTM 
+        ,NVL(B.DIV_1, 0) AS DIV_1
+        ,NVL(B.DIV_2, 0) AS DIV_2
+        ,NVL(B.DIV_3, 0) AS DIV_3
+        ,NVL(B.DIV_4, 0) AS DIV_4     
+  FROM E1_CLASS_ATTEND_MST A
+       ,( 
+        SELECT  A.KJKEY
+                ,A.ATTEND_NO
+                ,SUM(DIV_1) AS DIV_1
+                ,SUM(DIV_2) AS DIV_2
+                ,SUM(DIV_3) AS DIV_3
+                ,SUM(DIV_4) AS DIV_4
+          FROM (      
+              SELECT A.KJKEY
+                     ,A.ATTEND_NO
+                     ,CASE WHEN B.ATTEND_DIV = '1' THEN COUNT(0) ELSE 0 END DIV_1
+                     ,CASE WHEN B.ATTEND_DIV = '2' THEN COUNT(0) ELSE 0 END DIV_2
+                     ,CASE WHEN B.ATTEND_DIV = '3' THEN COUNT(0) ELSE 0 END DIV_3
+                     ,CASE WHEN B.ATTEND_DIV IS NULL THEN COUNT(0) ELSE 0 END DIV_4
+              FROM (
+                      SELECT   A.KJKEY
+                             , A.ATTEND_NO
+                             , B.COLREG_NO AS ATTEND_ID ,B.LESSN_GRAD, B.DEPT_NM
+                             ,'S' AS STU_GUBUN
+                             ,B.ATT_ORDR  AS ATT_ORDR
+                        FROM 
+                              E1_CLASS_ATTEND_MST A
+                             ,(SELECT A.KJKEY, B.COLREG_NO,B.LESSN_GRAD, B.DEPT_NM, B.ATT_ORDR 
+                                FROM E1_CLASS_LECTURE A , HAK_COURSE_APPLY B
+                               WHERE  A.YEAR = B.LEDG_YEAR
+                                 AND A.TERM = B.LEDG_SESSN
+                                 AND A.LSSN_CD = B.LSSN_CD 
+                                 AND A.SUBJT_NO = B.SUBJT_NO
+                                 AND A.ORG_SECT = B.ORG_SECT
+                                 AND B.RESLT_DESTR_CD = 'N' 
+                                 AND A.KJKEY =  <param name="session.kjkey" index="#"/>
+                              ) B 
+                       WHERE A.KJKEY = B.KJKEY
+                         AND A.KJKEY = <param name="session.kjkey" index="#"/>
+                         AND A.WEEK_NO = <param name="WEEK_NO" index="#" />
+                         AND (A.ATTEND_MST_DIV NOT IN ('6')
+                              OR A.ATTEND_MST_DIV IS NULL)
+                      UNION ALL
+                      SELECT   A.KJKEY
+                              ,A.ATTEND_NO
+                              ,B.AUDITOR_ID AS ATTEND_ID ,B.GRADE lessn_grad, B.DEPT_NM
+                              ,CASE WHEN B.AUDITOR_DIV = '1' THEN 'A' ELSE 'S' END AS STU_GUBUN
+                              ,null AS ATT_ORDR
+                        from  E1_CLASS_ATTEND_MST A 
+                             ,E1_CLASS_AUDITOR B  
+                       WHERE A.KJKEY = B.KJKEY
+                         AND A.KJKEY = <param name="session.kjkey" index="#"/>
+                         AND A.WEEK_NO = <param name="WEEK_NO" index="#" />
+                         AND (A.ATTEND_MST_DIV NOT IN ('6')
+                              OR A.ATTEND_MST_DIV IS NULL)
+                         AND B.SU_DECISION = '2'
+                         AND B.AUDITOR_DIV = '2' 
+                     ) A
+                     ,E1_CLASS_ATTEND B 
+               WHERE A.KJKEY = B.KJKEY(+)
+                 AND A.ATTEND_NO = B.ATTEND_NO(+)
+                 AND A.ATTEND_ID = B.ATTEND_ID(+) 
+                GROUP BY  A.KJKEY ,A.ATTEND_NO ,B.ATTEND_DIV
+               ) A
+               GROUP BY A.KJKEY  ,A.ATTEND_NO   
+          ) B     
+ WHERE A.KJKEY = <param name="session.kjkey" index="#"/> 
+   AND A.WEEK_NO = <param name="WEEK_NO" index="#" />
+   AND A.KJKEY = B.KJKEY(+)
+   AND A.ATTEND_NO = B.ATTEND_NO(+)
+ORDER BY A.WEEK_NO, A.WEEK_TIME   
+   </query>
+ </executeQuery>   
+ 
+  <!-- 출석마스터상세 -->
+  <executeQuery id="getAttendMstView" statementType="stmt">
+    <query> 
+ SELECT  B.KJKEY
+        ,B.ATTEND_NO
+        ,B.WEEK_NO
+        ,B.WEEK_TIME
+        ,B.ATTEND_MST_DIV
+        ,CASE WHEN B.ATTEND_MST_DIV = '1' THEN '일반'
+              WHEN B.ATTEND_MST_DIV = '2' THEN '스마트'
+              WHEN B.ATTEND_MST_DIV = '3' THEN '온라인'
+              WHEN B.ATTEND_MST_DIV = '4' THEN '중간시험'
+              WHEN B.ATTEND_MST_DIV = '5' THEN '기말시험'
+              WHEN B.ATTEND_MST_DIV = '6' THEN '휴강'
+              ELSE '' END AS ATTEND_MST_DIV_NM
+        ,CASE WHEN B.ATTEND_MST_DIV = '3' THEN '2' 
+              WHEN B.ATTEND_MST_DIV = '6' THEN '3'
+              ELSE '1' END ON_OFF_DIV        
+        ,B.ATTEND_DT
+        ,CASE WHEN B.LECT_CANCEL_WEEK_NO > 0 THEN 'Y'
+              ELSE 'N' END AS LECT_SUPPLY_YN 
+        ,B.LECT_CANCEL_WEEK_NO
+        ,B.LECT_CANCEL_WEEK_TIME
+        ,B.LECT_CANCEL_ATTEND_DT
+        ,B.LECT_CANCEL_RSN_CD
+        ,(SELECT CASE WHEN ETC_REG_YN = 'Y' THEN NULL ELSE RSN_NM END RSN_NM FROM E1_LECT_CANCEL_RSN_CODE WHERE RSN_CD = B.LECT_CANCEL_RSN_CD) AS LECT_CANCEL_RSN_NM  
+        ,(SELECT ETC_REG_YN FROM E1_LECT_CANCEL_RSN_CODE WHERE RSN_CD = B.LECT_CANCEL_RSN_CD) AS ETC_REG_YN          
+        ,B.LECT_CANCEL_RSN_NOTE
+        ,C.ATTEND_NO AS LECT_CANCEL_ATTEND_NO
+        ,C.LECT_CANCEL_RSN_CD as LECT_CANCEL_RSN_CD2
+        ,(SELECT CASE WHEN ETC_REG_YN = 'Y' THEN NULL ELSE RSN_NM END RSN_NM FROM E1_LECT_CANCEL_RSN_CODE WHERE RSN_CD = C.LECT_CANCEL_RSN_CD) AS LECT_CANCEL_RSN_NM2       
+        ,C.LECT_CANCEL_RSN_NOTE as LECT_CANCEL_RSN_NOTE2      
+        ,B.REG_ID
+        ,B.REG_DTM 
+        ,D.LECTURE_WEEKS
+        ,D.LECTURE_WEEKS_TITLE
+        ,D.LECTURE_SDT
+        ,D.LECTURE_EDT
+        ,D.LECTURE_TYPE
+        ,D.ATTEND_BS
+        ,D.ATTEND_MIN_TM      
+  FROM E1_CLASS_ATTEND_MST B,  E1_CLASS_ATTEND_MST C, E1_LECTURE_WEEKS D
+ WHERE B.KJKEY = <param name="session.kjkey" index="#"/> 
+   AND B.ATTEND_NO = <param name="ATTEND_NO" index="#" /> 
+   AND B.KJKEY = C.KJKEY(+)
+   AND B.LECT_CANCEL_WEEK_NO = C.WEEK_NO(+) 
+   AND B.LECT_CANCEL_WEEK_TIME = C.WEEK_TIME(+)
+   AND B.KJKEY = D.KJKEY(+)
+   AND B.ATTEND_NO = D.ATTEND_NO(+)   
+   </query>
+ </executeQuery>  
+     
+  <!-- 출석마스터상세(휴강상세) -->
+  <executeQuery id="getAttendMstCancelView" statementType="stmt">
+    <query> 
+ SELECT  B.KJKEY
+        ,B.ATTEND_NO
+        ,B.WEEK_NO
+        ,B.WEEK_TIME
+        ,B.ATTEND_MST_DIV
+        ,CASE WHEN B.ATTEND_MST_DIV = '1' THEN '일반'
+              WHEN B.ATTEND_MST_DIV = '2' THEN '스마트'
+              WHEN B.ATTEND_MST_DIV = '3' THEN '온라인'
+              WHEN B.ATTEND_MST_DIV = '4' THEN '중간시험'
+              WHEN B.ATTEND_MST_DIV = '5' THEN '기말시험'
+              WHEN B.ATTEND_MST_DIV = '6' THEN '휴강'
+              ELSE '' END AS ATTEND_MST_DIV_NM
+        ,CASE WHEN B.ATTEND_MST_DIV = '3' THEN '2' 
+              WHEN B.ATTEND_MST_DIV = '6' THEN '3'
+              ELSE '1' END ON_OFF_DIV        
+        ,B.ATTEND_DT
+        ,CASE WHEN C.LECT_CANCEL_WEEK_NO > 0 THEN 'Y'
+              ELSE 'N' END AS LECT_SUPPLY_YN 
+        ,(SELECT CASE WHEN ETC_REG_YN = 'Y' THEN NULL ELSE RSN_NM END RSN_NM FROM E1_LECT_CANCEL_RSN_CODE WHERE RSN_CD = B.LECT_CANCEL_RSN_CD) AS LECT_CANCEL_RSN_NM  
+        ,(SELECT ETC_REG_YN FROM E1_LECT_CANCEL_RSN_CODE WHERE RSN_CD = B.LECT_CANCEL_RSN_CD) AS ETC_REG_YN          
+        ,B.LECT_CANCEL_RSN_NOTE
+        ,B.LECT_CANCEL_RSN_CD
+        ,B.REG_ID
+        ,B.REG_DTM
+        ,(SELECT LECTURE_WEEKS FROM E1_LECTURE_WEEKS X WHERE X.KJKEY = C.KJKEY AND X.ATTEND_NO = C.ATTEND_NO)  AS LECTURE_WEEKS      
+  FROM E1_CLASS_ATTEND_MST B   --휴강
+    ,  E1_CLASS_ATTEND_MST C   --보강
+ WHERE B.KJKEY = <param name="session.kjkey" index="#"/> 
+   AND B.ATTEND_NO = <param name="ATTEND_NO" index="#" /> 
+   AND B.KJKEY = C.KJKEY(+)
+   AND B.WEEK_NO = C.LECT_CANCEL_WEEK_NO(+) 
+   AND B.WEEK_TIME = C.LECT_CANCEL_WEEK_TIME(+)  
+   </query>
+ </executeQuery> 
+ 
+ 
+   <!-- 출석마스터상세(휴강일 삭제시 보강이 존재 하는지 체크) -->
+  <executeQuery id="getAttendMstSupplyLectCheck" statementType="stmt">
+    <query> 
+ SELECT  
+         C.ATTEND_NO AS SUPPLY_ATTEND_NO
+        ,C.LECT_CANCEL_WEEK_NO
+        ,C.LECT_CANCEL_WEEK_TIME
+        ,C.LECT_CANCEL_ATTEND_DT
+        ,C.LECT_CANCEL_RSN_CD
+,(SELECT LECTURE_WEEKS FROM E1_LECTURE_WEEKS X WHERE X.KJKEY = C.KJKEY AND X.ATTEND_NO = C.ATTEND_NO)  AS LECTURE_WEEKS      
+  FROM E1_CLASS_ATTEND_MST B,  E1_CLASS_ATTEND_MST C 
+ WHERE B.KJKEY = <param name="session.kjkey" index="#"/> 
+   AND B.ATTEND_NO = <param name="ATTEND_NO" index="#" /> 
+   AND B.KJKEY = C.KJKEY(+)
+   AND B.WEEK_NO = C.LECT_CANCEL_WEEK_NO(+) 
+   AND B.WEEK_TIME = C.LECT_CANCEL_WEEK_TIME(+)  
+   </query>
+ </executeQuery> 
+      
+ <!-- 출석주차 복사 대상 주차 조회  -->
+  <executeQuery id="getAttendanceMstCopyList" statementType="stmt">
+    <query> 
+  SELECT A.KJKEY
+        ,A.ATTEND_NO
+        ,A.DIV_1
+        ,A.DIV_2
+        ,A.DIV_3
+        ,A.DIV_4
+        ,B.WEEK_NO
+        ,B.WEEK_TIME
+        ,B.ATTEND_DT
+        ,B.ATTEND_MST_DIV
+        ,B.LECT_CANCEL_WEEK_NO
+        ,B.LECT_CANCEL_WEEK_TIME
+        ,B.LECT_CANCEL_ATTEND_DT
+    FROM (
+      SELECT  A.KJKEY
+            ,A.ATTEND_NO
+            ,SUM(DIV_1) AS DIV_1
+            ,SUM(DIV_2) AS DIV_2
+            ,SUM(DIV_3) AS DIV_3
+            ,SUM(DIV_4) AS DIV_4
+      FROM (      
+          SELECT A.KJKEY
+                 ,A.ATTEND_NO
+                 ,CASE WHEN B.ATTEND_DIV = '1' THEN COUNT(0) ELSE 0 END DIV_1
+                 ,CASE WHEN B.ATTEND_DIV = '2' THEN COUNT(0) ELSE 0 END DIV_2
+                 ,CASE WHEN B.ATTEND_DIV = '3' THEN COUNT(0) ELSE 0 END DIV_3
+                 ,CASE WHEN B.ATTEND_DIV IS NULL THEN COUNT(0) ELSE 0 END DIV_4
+          FROM (
+                  SELECT   A.KJKEY
+                         , A.ATTEND_NO
+                         , B.COLREG_NO AS ATTEND_ID ,B.LESSN_GRAD, B.DEPT_NM
+                         ,'S' AS STU_GUBUN
+                         ,B.ATT_ORDR  AS ATT_ORDR
+                    FROM 
+                          E1_CLASS_ATTEND_MST A
+                         ,(SELECT A.KJKEY, B.COLREG_NO,B.LESSN_GRAD, B.DEPT_NM, B.ATT_ORDR 
+                            FROM E1_CLASS_LECTURE A , HAK_COURSE_APPLY B
+                           WHERE  A.YEAR = B.LEDG_YEAR
+                             AND A.TERM = B.LEDG_SESSN
+                             AND A.LSSN_CD = B.LSSN_CD 
+                             AND A.SUBJT_NO = B.SUBJT_NO
+                             AND A.ORG_SECT = B.ORG_SECT
+                             AND B.RESLT_DESTR_CD = 'N' 
+                             AND A.KJKEY = <param name="session.kjkey" index="#"/>
+                          ) B 
+                   WHERE A.KJKEY = B.KJKEY
+                     AND A.KJKEY = <param name="session.kjkey" index="#"/>
+                     AND A.WEEK_NO = <param name="WEEK_NO" index="#"/>
+                     AND A.ATTEND_MST_DIV IN ('1','2','3','4','5')
+                  UNION ALL
+                  SELECT   A.KJKEY
+                          ,A.ATTEND_NO
+                          ,B.AUDITOR_ID AS ATTEND_ID ,B.GRADE lessn_grad, B.DEPT_NM
+                          ,CASE WHEN B.AUDITOR_DIV = '1' THEN 'A' ELSE 'S' END AS STU_GUBUN
+                          ,null AS ATT_ORDR
+                    from  E1_CLASS_ATTEND_MST A 
+                         ,E1_CLASS_AUDITOR B  
+                   WHERE A.KJKEY = B.KJKEY
+                     AND A.KJKEY = <param name="session.kjkey" index="#"/>
+                     AND A.WEEK_NO = <param name="WEEK_NO" index="#"/>
+                     AND A.ATTEND_MST_DIV IN ('1','2','3','4','5') 
+                     AND B.SU_DECISION = '2'
+                     AND B.AUDITOR_DIV = '2' 
+                 ) A
+                 ,E1_CLASS_ATTEND B 
+           WHERE A.KJKEY = B.KJKEY(+)
+             AND A.ATTEND_NO = B.ATTEND_NO(+)
+             AND A.ATTEND_ID = B.ATTEND_ID(+) 
+            GROUP BY  A.KJKEY ,A.ATTEND_NO ,B.ATTEND_DIV
+           ) A
+           GROUP BY A.KJKEY  ,A.ATTEND_NO
+       ) A, E1_CLASS_ATTEND_MST B
+WHERE A.KJKEY = B.KJKEY 
+  AND A.ATTEND_NO = B.ATTEND_NO 
+   ORDER BY B.WEEK_NO, B.WEEK_TIME   
+   </query>
+ </executeQuery>  
+      
+  <!-- 스마트 출석 수강생조회 -->
+  <executeQuery id="getSmartStudentList" statementType="stmt">
+    <query>
+ 
+    SELECT A.USER_ID as user_id
+          ,A.COLREG_NO
+          ,A.NAME
+          ,A.DEPT_CD
+          ,NVL(A.DEPT_NM , B.DEPT_NM ) as DEPT_NM
+          ,case when NVL(A.REGST_GRADE, B.LESSN_GRAD) > 4 then '4' else NVL(A.REGST_GRADE, B.LESSN_GRAD) end as REGST_GRADE
+          ,A.HP_NO
+          ,A.E_MAIL
+          ,B.STU_GUBUN
+          ,B.ATT_ORDR
+          ,C.PHOTO_DIR_ID
+          ,C.PHOTO_EXT
+          ,(SELECT CASE WHEN X.EXCPT_ID IS NULL THEN 'N' ELSE 'Y' END 
+              FROM E1_CLASS_ATTEND_EXCPT X 
+             WHERE X.KJKEY = B.KJKEY 
+               AND X.EXCPT_ID = B.ATTEND_ID
+               AND <param name="ATTEND_DT" index="#" unmask="./-"/> BETWEEN X.ST_DT AND X.ED_DT ) AS EXCPT_YN 
+      FROM V_ECLASS_USER_INFO A
+          ,(
+            SELECT A.KJKEY, B.COLREG_NO AS ATTEND_ID,B.LESSN_GRAD, B.DEPT_NM, B.ATT_ORDR 
+                 ,'S' AS STU_GUBUN     
+              FROM E1_CLASS_LECTURE A , HAK_COURSE_APPLY B
+             WHERE A.YEAR = B.LEDG_YEAR
+               AND A.TERM = B.LEDG_SESSN
+               AND A.LSSN_CD = B.LSSN_CD 
+               AND A.SUBJT_NO = B.SUBJT_NO
+               AND A.ORG_SECT = B.ORG_SECT
+               AND B.RESLT_DESTR_CD = 'N' 
+               AND A.KJKEY = <param name="session.kjkey" index="#" />
+           UNION ALL
+            SELECT  A.KJKEY ,A.AUDITOR_ID AS ATTEND_ID ,A.GRADE LESSN_GRAD, A.DEPT_NM, NULL AS ATT_ORDR
+                  ,CASE WHEN A.AUDITOR_DIV = '1' THEN 'A' ELSE 'S' END AS STU_GUBUN
+              FROM E1_CLASS_AUDITOR A
+             WHERE A.KJKEY = <param name="session.kjkey" index="#" />     
+               AND A.SU_DECISION = '2'
+               AND A.AUDITOR_DIV = '2'
+           ) B
+          ,E1_MYSETTING C
+    WHERE B.ATTEND_ID = A.USER_ID
+      AND B.ATTEND_ID = C.USER_ID(+)       
+    </query>
+  </executeQuery>
+   
+  <!-- 학생목록조회 -->
+  <executeQuery id="getStudentList" statementType="stmt">
+    <query>
+select B.ATTEND_ID as user_id
+      ,'' AS SU_DECISION
+      ,'' AS SU_DECISION_NM
+      ,A.NAME
+      ,A.DEPT_CD
+      ,A.DEPT_NM
+      ,case when B.lessn_grad > 4 then '4' else B.lessn_grad end as REGST_GRADE
+      ,A.HP_NO
+      ,A.E_MAIL
+      ,A.TEL_NO
+      ,B.KJKEY
+      ,B.STU_GUBUN
+      ,B.DIV_1
+      ,B.DIV_2
+      ,B.DIV_3
+      ,B.DIV_4
+      ,B.ATT_ORDR
+      ,(SELECT PHOTO_DIR_ID FROM E1_MYSETTING Z WHERE Z.USER_ID = A.USER_ID) AS PHOTO_DIR_ID
+      ,(SELECT PHOTO_EXT FROM E1_MYSETTING Z WHERE Z.USER_ID = A.USER_ID) AS PHOTO_EXT   
+  from  V_ECLASS_USER_INFO A
+      ,(
+          SELECT   B.KJKEY 
+                 , B.ATTEND_ID AS ATTEND_ID ,B.LESSN_GRAD, B.DEPT_NM
+                 ,SUM(CASE WHEN A.ATTEND_DIV = '1' THEN 1 ELSE 0 END) DIV_1
+                 ,SUM(CASE WHEN A.ATTEND_DIV = '2' THEN 1 ELSE 0 END) DIV_2
+                 ,SUM(CASE WHEN A.ATTEND_DIV = '3' THEN 1 ELSE 0 END) DIV_3
+                 ,SUM(CASE WHEN B.CNT > 0 AND A.ATTEND_DIV IS NULL THEN 1 ELSE 0 END) DIV_4
+                 ,'S' AS STU_GUBUN
+                 ,B.ATT_ORDR  AS ATT_ORDR
+            FROM 
+                 (
+                  SELECT A.KJKEY, A.ATTEND_NO, B.ATTEND_ID, B.ATTEND_DIV 
+                    FROM E1_CLASS_ATTEND_MST A,
+                         E1_CLASS_ATTEND B
+                   WHERE A.KJKEY = B.KJKEY
+                     AND A.ATTEND_NO = B.ATTEND_NO
+                     AND A.KJKEY =   <param name="session.kjkey" index="#"/>
+                     --AND A.ATTEND_MST_DIV != '6' 
+                     AND (A.ATTEND_MST_DIV != '6' OR A.ATTEND_MST_DIV IS NULL ) 
+                 ) A
+                 ,(
+                     SELECT  B.KJKEY  
+                            ,A.ATTEND_ID AS ATTEND_ID
+                            ,B.ATTEND_NO
+                            ,A.LESSN_GRAD, A.DEPT_NM
+                            ,A.STU_GUBUN
+                            ,A.ATT_ORDR  AS ATT_ORDR 
+                            ,B.CNT
+                      FROM (
+                        SELECT B.KJKEY 
+                             , C.COLREG_NO AS ATTEND_ID,C.LESSN_GRAD, C.DEPT_NM
+                             ,'S' AS STU_GUBUN
+                             , C.ATT_ORDR  AS ATT_ORDR                        
+                          FROM E1_CLASS_LECTURE B
+                              ,HAK_COURSE_APPLY C
+                         WHERE B.KJKEY =  <param name="session.kjkey" index="#"/>
+                           AND B.ORG_SECT = C.ORG_SECT
+                           AND B.YEAR = C.LEDG_YEAR
+                           AND B.TERM = C.LEDG_SESSN
+                           AND B.LSSN_CD = C.LSSN_CD
+                           AND B.SUBJT_NO = C.SUBJT_NO
+                           AND C.RESLT_DESTR_CD = 'N'  
+                       union all
+                        SELECT a.KJKEY,a.auditor_id as ATTEND_ID
+                              ,A.GRADE lessn_grad, A.DEPT_NM
+                              ,CASE WHEN A.AUDITOR_DIV = '1' THEN 'A' ELSE 'S' END AS STU_GUBUN
+                              ,null AS ATT_ORDR                              
+                          FROM e1_class_auditor a 
+                         WHERE A.KJKEY =  <param name="session.kjkey" index="#"/>
+                           and A.SU_DECISION = '2'
+                           AND A.AUDITOR_DIV = '2'
+                         ) A,  
+                         ( 
+                          SELECT A.KJKEY,A.ATTEND_NO
+                                ,COUNT(0) OVER(PARTITION BY A.KJKEY) AS CNT
+                            FROM E1_CLASS_ATTEND_MST A
+                           WHERE KJKEY =  <param name="session.kjkey" index="#"/>
+                            --AND ATTEND_MST_DIV  != '6'
+                             AND (A.ATTEND_MST_DIV != '6' OR A.ATTEND_MST_DIV IS NULL ) 
+                         ) B    
+                      WHERE A.KJKEY = B.KJKEY(+) 
+                  ) B 
+           WHERE B.KJKEY = A.KJKEY(+)
+             AND B.ATTEND_NO = A.ATTEND_NO(+)
+             AND B.ATTEND_ID = A.ATTEND_ID(+)    
+           GROUP BY B.KJKEY, B.ATTEND_ID, B.LESSN_GRAD,B.DEPT_NM ,B.ATT_ORDR    
+       ) B 
+ WHERE A.USER_ID = B.ATTEND_ID 
+   <isNotEmpty property="attend_1">
+   AND B.DIV_2 >= <param name="attend_1" index="#" />
+   </isNotEmpty>
+   <isNotEmpty property="attend_2">
+   AND B.DIV_3 >= <param name="attend_2" index="#" />
+   </isNotEmpty>
+  <isNotEmpty property="SCH_VAL">
+       AND ( A.NAME LIKE <param name="SCH_VAL" suffix="%" index="#"/>
+        or   A.COLREG_NO = <param name="SCH_VAL" index="#"/> )
+  </isNotEmpty> 
+   <isNotEmpty property="SCH_STU_GUBUN">
+    AND B.STU_GUBUN = <param name="SCH_STU_GUBUN" index="#" />
+   </isNotEmpty>   
+<isEmpty property="ODR">
+ order by att_ordr,name, user_id,dept_nm,regst_grade
+</isEmpty>
+<isNotEmpty property="ODR">
+  order by <param name="ODR" index="#" quote="no"/>
+</isNotEmpty>
+    </query>
+  </executeQuery>
+  
+      
+  <!-- 출석 목록 -->
+  <executeQuery id="getAttendList" statementType="stmt">
+    <query> 
+SELECT A.ATTEND_NO,A.ATTEND_DT,A.WEEK_NO, A.WEEK_TIME, A.ATTEND_MST_DIV,B.ATTEND_DIV AS ATTEND_DIV
+       ,A.LECT_CANCEL_WEEK_NO, A.LECT_CANCEL_WEEK_TIME
+  FROM E1_CLASS_ATTEND_MST A, E1_CLASS_ATTEND B
+ WHERE A.KJKEY = B.KJKEY(+)
+   AND A.ATTEND_NO = B.ATTEND_NO(+)
+   AND A.KJKEY = <param name="KJKEY" index="#" />  
+   AND B.ATTEND_ID(+) = <param name="ATTEND_ID" index="#" />
+ORDER BY A.WEEK_NO, A.WEEK_TIME
+ 
+    </query>
+  </executeQuery>   
+
+  <!-- 학생목록조회 본 수업 출석 학생 -->
+  <executeQuery id="getAttendInsertList" statementType="stmt">
+    <query>
+select B.ATTEND_ID as user_id
+      ,'' AS SU_DECISION
+      ,'' AS SU_DECISION_NM
+      ,A.NAME
+      ,A.DEPT_CD
+      ,A.DEPT_NM
+      ,case when B.lessn_grad > 4 then '4' else B.lessn_grad end as REGST_GRADE
+      ,A.HP_NO
+      ,A.E_MAIL
+      ,A.TEL_NO
+      ,B.KJKEY
+      ,B.STU_GUBUN
+      ,B.DIV_1
+      ,B.DIV_2
+      ,B.DIV_3
+      ,B.DIV_4
+      ,B.ATT_ORDR
+      ,(SELECT PHOTO_DIR_ID FROM E1_MYSETTING Z WHERE Z.USER_ID = A.USER_ID) AS PHOTO_DIR_ID
+      ,(SELECT PHOTO_EXT FROM E1_MYSETTING Z WHERE Z.USER_ID = A.USER_ID) AS PHOTO_EXT   
+  from  V_ECLASS_USER_INFO A
+      ,(
+          SELECT   B.KJKEY 
+                 , B.ATTEND_ID AS ATTEND_ID ,B.LESSN_GRAD, B.DEPT_NM
+                 ,SUM(CASE WHEN A.ATTEND_DIV = '1' THEN 1 ELSE 0 END) DIV_1
+                 ,SUM(CASE WHEN A.ATTEND_DIV = '2' THEN 1 ELSE 0 END) DIV_2
+                 ,SUM(CASE WHEN A.ATTEND_DIV = '3' THEN 1 ELSE 0 END) DIV_3
+                 ,SUM(CASE WHEN B.CNT > 0 AND A.ATTEND_DIV IS NULL THEN 1 ELSE 0 END) DIV_4
+                 ,'S' AS STU_GUBUN
+                 ,B.ATT_ORDR  AS ATT_ORDR
+            FROM 
+                 (
+                  SELECT A.KJKEY, A.ATTEND_NO, B.ATTEND_ID, B.ATTEND_DIV 
+                    FROM E1_CLASS_ATTEND_MST A,
+                         E1_CLASS_ATTEND B
+                   WHERE A.KJKEY = B.KJKEY
+                     AND A.ATTEND_NO = B.ATTEND_NO
+                     AND A.KJKEY =   <param name="session.kjkey" index="#"/>
+                     AND (A.ATTEND_MST_DIV != '6' OR A.ATTEND_MST_DIV IS NULL ) 
+                 ) A
+                 ,(
+                     SELECT  B.KJKEY  
+                            ,A.ATTEND_ID AS ATTEND_ID
+                            ,B.ATTEND_NO
+                            ,A.LESSN_GRAD, A.DEPT_NM
+                            ,A.STU_GUBUN
+                            ,A.ATT_ORDR  AS ATT_ORDR 
+                            ,B.CNT
+                      FROM (
+                        SELECT B.KJKEY 
+                             , C.COLREG_NO AS ATTEND_ID,C.LESSN_GRAD, C.DEPT_NM
+                             ,'S' AS STU_GUBUN
+                             , C.ATT_ORDR  AS ATT_ORDR                        
+                          FROM E1_CLASS_LECTURE B
+                              ,HAK_COURSE_APPLY C
+                         WHERE B.KJKEY =  <param name="session.kjkey" index="#"/>
+                           AND B.ORG_SECT = C.ORG_SECT
+                           AND B.YEAR = C.LEDG_YEAR
+                           AND B.TERM = C.LEDG_SESSN
+                           AND B.LSSN_CD = C.LSSN_CD
+                           AND B.SUBJT_NO = C.SUBJT_NO
+                           AND C.RESLT_DESTR_CD = 'N'  
+                       union all
+                        SELECT a.KJKEY,a.auditor_id as ATTEND_ID
+                              ,A.GRADE lessn_grad, A.DEPT_NM
+                              ,CASE WHEN A.AUDITOR_DIV = '1' THEN 'A' ELSE 'S' END AS STU_GUBUN
+                              ,null AS ATT_ORDR                              
+                          FROM e1_class_auditor a 
+                         WHERE A.KJKEY =  <param name="session.kjkey" index="#"/>
+                           and A.SU_DECISION = '2'
+                           AND A.AUDITOR_DIV = '2'
+                         ) A,  
+                         ( 
+                          SELECT A.KJKEY,A.ATTEND_NO
+                                ,COUNT(0) OVER(PARTITION BY A.KJKEY) AS CNT
+                            FROM E1_CLASS_ATTEND_MST A
+                           WHERE A.KJKEY =  <param name="session.kjkey" index="#"/>
+                            AND (A.ATTEND_MST_DIV != '6' OR A.ATTEND_MST_DIV IS NULL ) 
+                         ) B    
+                      WHERE A.KJKEY = B.KJKEY(+) 
+                  ) B 
+           WHERE B.KJKEY = A.KJKEY(+)
+             AND B.ATTEND_NO = A.ATTEND_NO(+)
+             AND B.ATTEND_ID = A.ATTEND_ID(+)    
+           GROUP BY B.KJKEY, B.ATTEND_ID, B.LESSN_GRAD,B.DEPT_NM ,B.ATT_ORDR    
+       ) B 
+ WHERE A.USER_ID = B.ATTEND_ID 
+ --시험일 경우 출석대체자 전체포함
+ <isEmpty property="EXAM_YN">
+   AND NOT EXISTS(SELECT 1
+                    FROM E1_CLASS_ATTEND_EXCPT X
+                   WHERE B.KJKEY = X.KJKEY
+                     AND <param name="ATTEND_DT" index="#" unmask="/.-"/> BETWEEN X.ST_DT AND X.ED_DT
+                     AND A.USER_ID = X.EXCPT_ID)
+ </isEmpty>                     
+      <isNotEmpty property="SCH_VAL">
+           AND ( A.NAME LIKE <param name="SCH_VAL" suffix="%" index="#"/>
+            or   A.COLREG_NO = <param name="SCH_VAL" index="#"/> )
+      </isNotEmpty> 
+       <isNotEmpty property="SCH_STU_GUBUN">
+        AND B.STU_GUBUN = <param name="SCH_STU_GUBUN" index="#" />
+       </isNotEmpty>   
+<isEmpty property="ODR">
+ order by att_ordr,name, user_id,dept_nm,regst_grade
+</isEmpty>
+<isNotEmpty property="ODR">
+  order by <param name="ODR" index="#" quote="no"/>
+</isNotEmpty>
+    </query>
+  </executeQuery>
+  
+    
+      
+  <!-- 출석부 마스터 정보 -->
+  <executeQuery id="getAttendGroupInfo" statementType="stmt">
+    <query>    
+SELECT A.KJKEY, A.ATTEND_NO, A.ATTEND_DT, A.WEEK_NO,A.WEEK_TIME, A.ATTEND_MST_DIV
+     , A.LECT_CANCEL_WEEK_NO, A.LECT_CANCEL_WEEK_TIME,A.LECT_CANCEL_ATTEND_DT
+     ,(SELECT NAME FROM V_ECLASS_USER_INFO WHERE USER_ID = A.REG_ID ) AS REG_NM
+     ,CASE WHEN TO_CHAR(to_date(A.ATTEND_DT,'yyyymmdd'),'D') = '1' THEN '일'
+            WHEN TO_CHAR(to_date(A.ATTEND_DT,'yyyymmdd'),'D') = '2' THEN '월'
+            WHEN TO_CHAR(to_date(A.ATTEND_DT,'yyyymmdd'),'D') = '3' THEN '화'
+            WHEN TO_CHAR(to_date(A.ATTEND_DT,'yyyymmdd'),'D') = '4' THEN '수'
+            WHEN TO_CHAR(to_date(A.ATTEND_DT,'yyyymmdd'),'D') = '5' THEN '목'
+            WHEN TO_CHAR(to_date(A.ATTEND_DT,'yyyymmdd'),'D') = '6' THEN '금'
+            WHEN TO_CHAR(to_date(A.ATTEND_DT,'yyyymmdd'),'D') = '7' THEN '토' ELSE '' END LECT_DWEK_NM
+      ,SUBSTR(A.ATTEND_DT,5,2) AS ATTEND_MM
+      ,SUBSTR(A.ATTEND_DT,7,2) AS ATTEND_DD     
+  FROM E1_CLASS_ATTEND_MST A 
+ WHERE A.KJKEY = <param name="session.kjkey" index="#" /> 
+   --AND A.ATTEND_MST_DIV IS NOT NULL
+ ORDER BY A.WEEK_NO,A.WEEK_TIME 
+    </query>
+  </executeQuery>    
+  
+  <!-- 출석부 주차정보 -->
+  <executeQuery id="getAttendGroupWeekNo" statementType="stmt">
+    <query>  
+ SELECT A.KJKEY, A.WEEK_NO,COUNT(0) AS WEEK_NO_CNT
+  FROM E1_CLASS_ATTEND_MST A 
+ WHERE A.KJKEY = <param name="session.kjkey" index="#" /> 
+   AND A.ATTEND_MST_DIV IS NOT NULL 
+GROUP BY A.KJKEY , A.WEEK_NO  
+ORDER BY A.WEEK_NO    
+    </query>
+  </executeQuery>  
+
+  <!-- 팀티칭 존재 유무 --> 
+  <executeQuery statementType="stmt" id="getAssoProfExists">
+    <query>
+ SELECT CASE WHEN EXISTS (
+        SELECT 1 AS CNT 
+          FROM E1_CLASS_ASSO_PROF 
+         WHERE KJKEY = <param name="session.kjkey" index="#" /> 
+          AND PROF_DIV = '1' ) THEN 'Y' ELSE 'N' END EXISTS_YN
+   FROM DUAL
+    </query>
+  </executeQuery>   
+
+  <!-- 출석상세조회(대체자 제외 시험출석 일경우는 제외자도 포함)-->
+  <executeQuery id="getAttendUpdateList" statementType="stmt">
+    <query>
+          SELECT  A.KJKEY
+                 ,A.ATTEND_NO
+                 ,A.ATTEND_DT           
+                 ,C.USER_ID
+                 ,C.COLREG_NO
+                 ,C.NAME
+                 ,A.ATTEND_ID  
+                 ,A.ATTEND_DIV
+                 ,NVL(C.DEPT_NM, A.DEPT_NM) AS DEPT_NM
+                 ,CASE WHEN NVL(C.REGST_GRADE, A.LESSN_GRAD ) > 4 THEN '4' ELSE  NVL(C.REGST_GRADE, A.LESSN_GRAD ) END AS REGST_GRADE                   
+                 ,A.REG_ID 
+                 ,A.REG_DTM                    
+                 ,A.STU_GUBUN  
+                 ,A.ATT_ORDR                   
+                 ,A.EXCPT_YN  
+                 ,A.DIV_1
+                 ,A.DIV_2
+                 ,A.DIV_3
+                 ,A.DIV_4
+                 ,D.PHOTO_DIR_ID  AS PHOTO_DIR_ID
+                 ,D.PHOTO_EXT  AS PHOTO_EXT           
+                 ,B.ATTEND_DIV                  
+                 ,B.ABS_RSN_CD
+                 ,B.ABS_RSN_NOTE 
+                 ,B.ABS_RSN_NM 
+                 ,B.UPT_DTM
+                 ,B.SMRT_ATTEND_IP
+                 ,B.SMRT_ATTEND_DEVICE
+                 ,B.SMRT_ATTEND_DTM       
+                 ,A.ATTEND_TARGET_DV 
+                 ,NULL AS EXCPT_ATTEND_DIV  
+                 ,NULL CHG_EXCPT_ATTEND_YN                  
+             FROM (
+                      SELECT  A.KJKEY 
+                             ,A.ATTEND_NO
+                             ,A.ATTEND_DT
+                             ,A.ATTEND_ID AS ATTEND_ID
+                             ,A.ATTEND_DIV
+                             ,A.LESSN_GRAD
+                             ,A.DEPT_NM
+                             ,A.REG_ID 
+                             ,A.REG_DTM                    
+                             ,A.STU_GUBUN AS STU_GUBUN
+                             ,A.ATT_ORDR  AS ATT_ORDR  
+                             ,A.ATTEND_MST_DIV      
+                             ,A.ATTEND_TARGET_DV         
+                             ,A.EXCPT_YN  AS EXCPT_YN
+                             ,SUM(CASE WHEN A.ATTEND_DIV = '1' THEN 1 ELSE 0 END ) OVER (PARTITION BY A.KJKEY, A.ATTEND_ID ) AS DIV_1
+                             ,SUM(CASE WHEN A.ATTEND_DIV = '2' THEN 1 ELSE 0 END ) OVER (PARTITION BY A.KJKEY, A.ATTEND_ID ) AS DIV_2
+                             ,SUM(CASE WHEN A.ATTEND_DIV = '3' THEN 1 ELSE 0 END ) OVER (PARTITION BY A.KJKEY, A.ATTEND_ID ) AS DIV_3
+                             ,SUM(CASE WHEN A.ATTEND_DIV IS NULL AND A.CNT > 0 THEN 1 ELSE 0 END ) OVER (PARTITION BY A.KJKEY, A.ATTEND_ID ) AS DIV_4
+                        FROM 
+                             (
+                                 SELECT  B.KJKEY  
+                                        ,A.ATTEND_ID AS ATTEND_ID
+                                        ,B.ATTEND_NO
+                                        ,A.LESSN_GRAD, A.DEPT_NM
+                                        ,A.STU_GUBUN
+                                        ,A.ATT_ORDR  AS ATT_ORDR 
+                                        ,B.CNT
+                                        ,B.ATTEND_DT
+                                        ,(SELECT X.ATTEND_DIV FROM E1_CLASS_ATTEND X WHERE X.KJKEY = A.KJKEY AND X.ATTEND_NO = B.ATTEND_NO AND X.ATTEND_ID = A.ATTEND_ID) AS ATTEND_DIV
+                                        ,B.REG_ID
+                                        ,B.REG_DTM
+                                        ,B.ATTEND_MST_DIV
+                                        ,B.ATTEND_TARGET_DV
+                                        ,CASE WHEN (B.ATTEND_TARGET_DV = '2' OR B.ATTEND_TARGET_DV IS NULL) 
+                                               AND EXISTS (SELECT 1  
+                                                             FROM E1_CLASS_ATTEND_EXCPT X 
+                                                            WHERE B.KJKEY = X.KJKEY
+                                                              AND B.ATTEND_DT BETWEEN X.ST_DT AND X.ED_DT    
+                                                              AND X.EXCPT_ID = A.ATTEND_ID  ) 
+                                              THEN 'Y' ELSE 'N' END EXCPT_YN 
+                                  FROM (
+                                          SELECT B.KJKEY 
+                                               , C.COLREG_NO AS ATTEND_ID,C.LESSN_GRAD, C.DEPT_NM
+                                               ,'S' AS STU_GUBUN
+                                               , C.ATT_ORDR  AS ATT_ORDR                    
+                                            FROM E1_CLASS_LECTURE B
+                                                ,HAK_COURSE_APPLY C
+                                           WHERE B.KJKEY = <param name="session.kjkey" index="#"/>
+                                             AND B.ORG_SECT = C.ORG_SECT
+                                             AND B.YEAR = C.LEDG_YEAR
+                                             AND B.TERM = C.LEDG_SESSN
+                                             AND B.LSSN_CD = C.LSSN_CD
+                                             AND B.SUBJT_NO = C.SUBJT_NO
+                                             AND C.RESLT_DESTR_CD = 'N'  
+                                         union all
+                                          SELECT a.KJKEY,a.auditor_id as ATTEND_ID
+                                                ,A.GRADE lessn_grad, A.DEPT_NM
+                                                ,CASE WHEN A.AUDITOR_DIV = '1' THEN 'A' ELSE 'S' END AS STU_GUBUN
+                                                ,null AS ATT_ORDR                              
+                                            FROM e1_class_auditor a 
+                                           WHERE A.KJKEY = <param name="session.kjkey" index="#"/>
+                                             and A.SU_DECISION = '2'
+                                             AND A.AUDITOR_DIV = '2'
+                                     ) A,  
+                                     ( 
+                                      SELECT A.KJKEY,A.ATTEND_NO, A.ATTEND_DT, A.REG_ID, A.REG_DTM, A.ATTEND_MST_DIV
+                                            ,B.ATTEND_TARGET_DV
+                                            ,COUNT(0) OVER(PARTITION BY A.KJKEY) AS CNT
+                                        FROM E1_CLASS_ATTEND_MST A, E1_LECTURE_WEEKS B
+                                       WHERE A.KJKEY = B.KJKEY(+)
+                                         AND A.ATTEND_NO = B.ATTEND_NO(+)
+                                         AND A.KJKEY = <param name="session.kjkey" index="#"/>
+                                         AND (A.ATTEND_MST_DIV != '6' OR A.ATTEND_MST_DIV IS NULL )
+                                     ) B    
+                                  WHERE A.KJKEY = B.KJKEY(+) 
+                            )  A
+                  ) A
+                 ,( SELECT B.KJKEY, B.ATTEND_NO
+                            , B.ATTEND_ID, B.ATTEND_DIV  
+                            , B.UPT_DTM
+                            , B.SMRT_ATTEND_IP
+                            , B.SMRT_ATTEND_DEVICE
+                            , B.SMRT_ATTEND_DTM                
+                            , B.ABS_RSN_CD
+                            , B.ABS_RSN_NOTE 
+                            , CASE WHEN C.ETC_REG_YN ='Y' THEN NULL ELSE C.RSN_NM END  AS ABS_RSN_NM
+                         FROM E1_CLASS_ATTEND_MST A 
+                             ,E1_CLASS_ATTEND B
+                             ,E1_ABS_RSN_CODE C
+                        WHERE A.KJKEY = B.KJKEY 
+                          AND A.ATTEND_NO = B.ATTEND_NO 
+                          AND B.ABS_RSN_CD = C.RSN_CD (+)
+                          AND A.ATTEND_NO =  <param name="ATTEND_NO" index="#" />
+                          AND A.KJKEY = <param name="session.kjkey" index="#"/>
+                  ) B                
+                 , V_ECLASS_USER_INFO C 
+                 , E1_MYSETTING D   
+           WHERE A.KJKEY = B.KJKEY(+)
+             AND A.ATTEND_NO = B.ATTEND_NO(+)
+             AND A.ATTEND_ID = B.ATTEND_ID(+) 
+             AND A.ATTEND_ID = C.USER_ID
+             AND A.ATTEND_ID = D.USER_ID(+) 
+             AND A.ATTEND_NO =  <param name="ATTEND_NO" index="#" />
+          <isEmpty property="EXAM_YN">   
+             AND A.EXCPT_YN = 'N'
+          </isEmpty>    
+   <isNotEmpty property="SCH_STU_GUBUN" >
+     AND A.STU_GUBUN = <param name="SCH_STU_GUBUN"/>
+   </isNotEmpty>          
+   <isNotEmpty property="SCH_DIV">
+     <isEqual  compareValue="4" property="SCH_DIV">
+       AND B.ATTEND_DIV IS NULL
+     </isEqual>
+     <isNotEqual compareValue="4" property="SCH_DIV">
+       AND B.ATTEND_DIV = <param name="SCH_DIV" index="#"/>                 
+     </isNotEqual>
+   </isNotEmpty>       
+<isNotEmpty property="SCH_VAL">
+     AND ( C.NAME LIKE <param name="SCH_VAL" suffix="%" index="#"/>
+      or   C.COLREG_NO = <param name="SCH_VAL" index="#"/> )
+</isNotEmpty> 
+<isNotEmpty property="ODR">
+  order by <param name="ODR" index="#" quote="no"/>
+</isNotEmpty>  
+<isEmpty property="ODR">
+  order by name, user_id, dept_nm, REGST_GRADE
+</isEmpty> 
+    </query>
+  </executeQuery>  
+  
+  <!-- 출석상세조회(대체자 포함)-->
+  <executeQuery id="getAttendUpdateList2" statementType="stmt">
+    <query>
+          SELECT  A.KJKEY
+                 ,A.ATTEND_NO
+                 ,A.ATTEND_DT           
+                 ,C.USER_ID
+                 ,C.COLREG_NO
+                 ,C.NAME
+                 ,A.ATTEND_ID  
+                 ,A.ATTEND_DIV
+                 ,NVL(C.DEPT_NM, A.DEPT_NM) AS DEPT_NM
+                 ,CASE WHEN NVL(C.REGST_GRADE, A.LESSN_GRAD ) > 4 THEN '4' ELSE  NVL(C.REGST_GRADE, A.LESSN_GRAD ) END AS REGST_GRADE                   
+                 ,A.REG_ID 
+                 ,A.REG_DTM                    
+                 ,A.STU_GUBUN  
+                 ,A.ATT_ORDR                   
+                 ,A.EXCPT_YN  
+                 ,A.DIV_1
+                 ,A.DIV_2
+                 ,A.DIV_3
+                 ,A.DIV_4
+                 ,D.PHOTO_DIR_ID  AS PHOTO_DIR_ID
+                 ,D.PHOTO_EXT  AS PHOTO_EXT           
+                 ,B.ATTEND_DIV                  
+                 ,B.ABS_RSN_CD
+                 ,B.ABS_RSN_NOTE 
+                 ,B.ABS_RSN_NM 
+                 ,B.UPT_DTM
+                 ,B.SMRT_ATTEND_IP
+                 ,B.SMRT_ATTEND_DEVICE
+                 ,B.SMRT_ATTEND_DTM       
+                 ,A.ATTEND_TARGET_DV 
+                 ,NULL AS EXCPT_ATTEND_DIV  
+                 ,NULL CHG_EXCPT_ATTEND_YN                  
+             FROM (
+                      SELECT  A.KJKEY 
+                             ,A.ATTEND_NO
+                             ,A.ATTEND_DT
+                             ,A.ATTEND_ID AS ATTEND_ID
+                             ,A.ATTEND_DIV
+                             ,A.LESSN_GRAD
+                             ,A.DEPT_NM
+                             ,A.REG_ID 
+                             ,A.REG_DTM                    
+                             ,A.STU_GUBUN AS STU_GUBUN
+                             ,A.ATT_ORDR  AS ATT_ORDR  
+                             ,A.ATTEND_MST_DIV      
+                             ,A.ATTEND_TARGET_DV         
+                             ,A.EXCPT_YN  AS EXCPT_YN
+                             ,SUM(CASE WHEN A.ATTEND_DIV = '1' THEN 1 ELSE 0 END ) OVER (PARTITION BY A.KJKEY, A.ATTEND_ID ) AS DIV_1
+                             ,SUM(CASE WHEN A.ATTEND_DIV = '2' THEN 1 ELSE 0 END ) OVER (PARTITION BY A.KJKEY, A.ATTEND_ID ) AS DIV_2
+                             ,SUM(CASE WHEN A.ATTEND_DIV = '3' THEN 1 ELSE 0 END ) OVER (PARTITION BY A.KJKEY, A.ATTEND_ID ) AS DIV_3
+                             ,SUM(CASE WHEN A.ATTEND_DIV IS NULL AND A.CNT > 0 THEN 1 ELSE 0 END ) OVER (PARTITION BY A.KJKEY, A.ATTEND_ID ) AS DIV_4
+                        FROM 
+                             (
+                                 SELECT  B.KJKEY  
+                                        ,A.ATTEND_ID AS ATTEND_ID
+                                        ,B.ATTEND_NO
+                                        ,A.LESSN_GRAD, A.DEPT_NM
+                                        ,A.STU_GUBUN
+                                        ,A.ATT_ORDR  AS ATT_ORDR 
+                                        ,B.CNT
+                                        ,B.ATTEND_DT
+                                        ,(SELECT X.ATTEND_DIV FROM E1_CLASS_ATTEND X WHERE X.KJKEY = A.KJKEY AND X.ATTEND_NO = B.ATTEND_NO AND X.ATTEND_ID = A.ATTEND_ID) AS ATTEND_DIV
+                                        ,B.REG_ID
+                                        ,B.REG_DTM
+                                        ,B.ATTEND_MST_DIV
+                                        ,B.ATTEND_TARGET_DV
+                                        ,CASE WHEN (B.ATTEND_TARGET_DV = '2' OR B.ATTEND_TARGET_DV IS NULL) 
+                                               AND EXISTS (SELECT 1  
+                                                             FROM E1_CLASS_ATTEND_EXCPT X 
+                                                            WHERE B.KJKEY = X.KJKEY
+                                                              AND B.ATTEND_DT BETWEEN X.ST_DT AND X.ED_DT    
+                                                              AND X.EXCPT_ID = A.ATTEND_ID  ) 
+                                              THEN 'Y' ELSE 'N' END EXCPT_YN 
+                                  FROM (
+                                          SELECT B.KJKEY 
+                                               , C.COLREG_NO AS ATTEND_ID,C.LESSN_GRAD, C.DEPT_NM
+                                               ,'S' AS STU_GUBUN
+                                               , C.ATT_ORDR  AS ATT_ORDR                    
+                                            FROM E1_CLASS_LECTURE B
+                                                ,HAK_COURSE_APPLY C
+                                           WHERE B.KJKEY = <param name="session.kjkey" index="#"/>
+                                             AND B.ORG_SECT = C.ORG_SECT
+                                             AND B.YEAR = C.LEDG_YEAR
+                                             AND B.TERM = C.LEDG_SESSN
+                                             AND B.LSSN_CD = C.LSSN_CD
+                                             AND B.SUBJT_NO = C.SUBJT_NO
+                                             AND C.RESLT_DESTR_CD = 'N'  
+                                         union all
+                                          SELECT a.KJKEY,a.auditor_id as ATTEND_ID
+                                                ,A.GRADE lessn_grad, A.DEPT_NM
+                                                ,CASE WHEN A.AUDITOR_DIV = '1' THEN 'A' ELSE 'S' END AS STU_GUBUN
+                                                ,null AS ATT_ORDR                              
+                                            FROM e1_class_auditor a 
+                                           WHERE A.KJKEY = <param name="session.kjkey" index="#"/>
+                                             and A.SU_DECISION = '2'
+                                             AND A.AUDITOR_DIV = '2'
+                                     ) A,  
+                                     ( 
+                                      SELECT A.KJKEY,A.ATTEND_NO, A.ATTEND_DT, A.REG_ID, A.REG_DTM, A.ATTEND_MST_DIV
+                                            ,B.ATTEND_TARGET_DV
+                                            ,COUNT(0) OVER(PARTITION BY A.KJKEY) AS CNT
+                                        FROM E1_CLASS_ATTEND_MST A, E1_LECTURE_WEEKS B
+                                       WHERE A.KJKEY = B.KJKEY(+)
+                                         AND A.ATTEND_NO = B.ATTEND_NO(+)
+                                         AND A.KJKEY = <param name="session.kjkey" index="#"/>
+                                         AND (A.ATTEND_MST_DIV != '6' OR A.ATTEND_MST_DIV IS NULL )
+                                     ) B    
+                                  WHERE A.KJKEY = B.KJKEY(+) 
+                            )  A
+                  ) A
+                 ,( SELECT B.KJKEY, B.ATTEND_NO
+                            , B.ATTEND_ID, B.ATTEND_DIV  
+                            , B.UPT_DTM
+                            , B.SMRT_ATTEND_IP
+                            , B.SMRT_ATTEND_DEVICE
+                            , B.SMRT_ATTEND_DTM                
+                            , B.ABS_RSN_CD
+                            , B.ABS_RSN_NOTE 
+                            , CASE WHEN C.ETC_REG_YN ='Y' THEN NULL ELSE C.RSN_NM END  AS ABS_RSN_NM
+                         FROM E1_CLASS_ATTEND_MST A 
+                             ,E1_CLASS_ATTEND B
+                             ,E1_ABS_RSN_CODE C
+                        WHERE A.KJKEY = B.KJKEY 
+                          AND A.ATTEND_NO = B.ATTEND_NO 
+                          AND B.ABS_RSN_CD = C.RSN_CD (+)
+                          AND A.ATTEND_NO =  <param name="ATTEND_NO" index="#" />
+                          AND A.KJKEY = <param name="session.kjkey" index="#"/>
+                  ) B                
+                 , V_ECLASS_USER_INFO C 
+                 , E1_MYSETTING D   
+           WHERE A.KJKEY = B.KJKEY(+)
+             AND A.ATTEND_NO = B.ATTEND_NO(+)
+             AND A.ATTEND_ID = B.ATTEND_ID(+) 
+             AND A.ATTEND_ID = C.USER_ID
+             AND A.ATTEND_ID = D.USER_ID(+) 
+             AND A.ATTEND_NO =  <param name="ATTEND_NO" index="#" />
+   <isNotEmpty property="SCH_STU_GUBUN" >
+     AND A.STU_GUBUN = <param name="SCH_STU_GUBUN"/>
+   </isNotEmpty>          
+   <isNotEmpty property="SCH_DIV">
+     <isEqual  compareValue="4" property="SCH_DIV">
+       AND B.ATTEND_DIV IS NULL
+     </isEqual>
+     <isNotEqual compareValue="4" property="SCH_DIV">
+       AND B.ATTEND_DIV = <param name="SCH_DIV" index="#"/>                 
+     </isNotEqual>
+   </isNotEmpty>       
+<isNotEmpty property="SCH_VAL">
+     AND ( C.NAME LIKE <param name="SCH_VAL" suffix="%" index="#"/>
+      or   C.COLREG_NO = <param name="SCH_VAL" index="#"/> )
+</isNotEmpty> 
+<isNotEmpty property="ODR">
+  order by <param name="ODR" index="#" quote="no"/>
+</isNotEmpty>  
+<isEmpty property="ODR">
+  order by name, user_id, dept_nm, REGST_GRADE
+</isEmpty> 
+    </query>
+  </executeQuery>  
+  
+  <!-- 출석상세조회-->
+  <executeQuery id="getAttendUpdateList_BAK" statementType="stmt">
+    <query>
+       SELECT  A.KJKEY
+              ,A.ATTEND_NO
+              ,A.USER_ID 
+              ,A.ATTEND_ID
+              ,A.COLREG_NO
+              ,A.NAME
+              ,A.DEPT_NM
+              ,A.REGST_GRADE
+              ,A.DIV_1 
+              ,A.DIV_2 
+              ,A.DIV_3 
+              ,A.DIV_4 
+              ,A.STU_GUBUN AS STU_GUBUN 
+              ,A.PHOTO_DIR_ID  AS PHOTO_DIR_ID
+              ,A.PHOTO_EXT  AS PHOTO_EXT  
+              ,A.ATT_ORDR   
+              ,A.REG_ID 
+              ,A.REG_DTM   
+              ,B.ATTEND_DIV                  
+              ,B.ABS_RSN_CD
+              ,B.ABS_RSN_NOTE 
+              ,B.ABS_RSN_NM 
+              ,B.UPT_DTM
+              ,B.SMRT_ATTEND_IP
+              ,B.SMRT_ATTEND_DEVICE
+              ,B.SMRT_ATTEND_DTM   
+              ,C.ATTEND_TARGET_DV 
+              ,C.ATTEND_DIV AS EXCPT_ATTEND_DIV  
+              ,CASE WHEN C.ATTEND_ID IS NULL THEN 'N' ELSE 'Y' END CHG_EXCPT_ATTEND_YN                                 
+       FROM (
+        SELECT A.KJKEY
+              ,B.ATTEND_NO
+              ,C.USER_ID 
+              ,A.ATTEND_ID
+              ,C.COLREG_NO
+              ,C.NAME
+              ,NVL(C.DEPT_NM, A.DEPT_NM) AS DEPT_NM
+              ,CASE WHEN NVL(C.REGST_GRADE, A.LESSN_GRAD ) > 4 THEN '4' ELSE  NVL(C.REGST_GRADE, A.LESSN_GRAD ) END AS REGST_GRADE
+              ,nvl(A.DIV_1,'0') as div_1
+              ,nvl(A.DIV_2,'0') as div_2
+              ,nvl(A.DIV_3,'0') as div_3
+              ,nvl(A.DIV_4,'0') as div_4    
+              ,A.STU_GUBUN AS STU_GUBUN 
+              ,D.PHOTO_DIR_ID  AS PHOTO_DIR_ID
+              ,D.PHOTO_EXT  AS PHOTO_EXT  
+              ,A.ATT_ORDR   
+              ,B.REG_ID 
+              ,B.REG_DTM    
+          FROM (
+            SELECT   B.KJKEY 
+                   , B.ATTEND_ID AS ATTEND_ID ,B.LESSN_GRAD, B.DEPT_NM
+                   ,SUM(CASE WHEN A.ATTEND_DIV = '1' THEN 1 ELSE 0 END) DIV_1
+                   ,SUM(CASE WHEN A.ATTEND_DIV = '2' THEN 1 ELSE 0 END) DIV_2
+                   ,SUM(CASE WHEN A.ATTEND_DIV = '3' THEN 1 ELSE 0 END) DIV_3
+                   ,SUM(CASE WHEN B.CNT > 0 AND A.ATTEND_DIV IS NULL THEN 1 ELSE 0 END) DIV_4
+                   ,B.STU_GUBUN AS STU_GUBUN
+                   ,B.ATT_ORDR  AS ATT_ORDR
+                   ,B.EXCPT_YN  AS EXCPT_YN
+              FROM 
+                   (
+                    SELECT A.KJKEY, A.ATTEND_NO, B.ATTEND_ID, B.ATTEND_DIV 
+                      FROM E1_CLASS_ATTEND_MST A,
+                           E1_CLASS_ATTEND B
+                     WHERE A.KJKEY = B.KJKEY
+                       AND A.ATTEND_NO = B.ATTEND_NO
+                       AND A.KJKEY =   <param name="session.kjkey" index="#"/>
+                       AND ATTEND_MST_DIV  != '6'
+                   ) A
+                   ,(
+                       SELECT  B.KJKEY  
+                              ,A.ATTEND_ID AS ATTEND_ID
+                              ,B.ATTEND_NO
+                              ,A.LESSN_GRAD, A.DEPT_NM
+                              ,A.STU_GUBUN
+                              ,A.ATT_ORDR  AS ATT_ORDR 
+                              ,B.CNT
+                              ,B.ATTEND_DT
+                              ,CASE WHEN EXISTS (SELECT 1  
+                                                   FROM E1_CLASS_ATTEND_EXCPT X 
+                                                  WHERE B.KJKEY = X.KJKEY
+                                                    AND B.ATTEND_DT NOT BETWEEN X.ST_DT AND X.ED_DT    
+                                                    AND X.EXCPT_ID = A.ATTEND_ID  ) 
+                                    THEN 'Y' ELSE 'N' END EXCPT_YN 
+                        FROM (
+                          SELECT B.KJKEY 
+                               , C.COLREG_NO AS ATTEND_ID,C.LESSN_GRAD, C.DEPT_NM
+                               ,'S' AS STU_GUBUN
+                               , C.ATT_ORDR  AS ATT_ORDR                    
+                            FROM E1_CLASS_LECTURE B
+                                ,HAK_COURSE_APPLY C
+                           WHERE B.KJKEY =  <param name="session.kjkey" index="#"/>
+                             AND B.ORG_SECT = C.ORG_SECT
+                             AND B.YEAR = C.LEDG_YEAR
+                             AND B.TERM = C.LEDG_SESSN
+                             AND B.LSSN_CD = C.LSSN_CD
+                             AND B.SUBJT_NO = C.SUBJT_NO
+                             AND C.RESLT_DESTR_CD = 'N'  
+                         union all
+                          SELECT a.KJKEY,a.auditor_id as ATTEND_ID
+                                ,A.GRADE lessn_grad, A.DEPT_NM
+                                ,CASE WHEN A.AUDITOR_DIV = '1' THEN 'A' ELSE 'S' END AS STU_GUBUN
+                                ,null AS ATT_ORDR                              
+                            FROM e1_class_auditor a 
+                           WHERE A.KJKEY =  <param name="session.kjkey" index="#"/>
+                             and A.SU_DECISION = '2'
+                             AND A.AUDITOR_DIV = '2'
+                           ) A,  
+                           ( 
+                            SELECT A.KJKEY,A.ATTEND_NO, A.ATTEND_DT
+                                  ,COUNT(0) OVER(PARTITION BY A.KJKEY) AS CNT
+                              FROM E1_CLASS_ATTEND_MST A
+                             WHERE KJKEY =  <param name="session.kjkey" index="#"/>
+                              AND ATTEND_MST_DIV != '6'
+                           ) B    
+                        WHERE A.KJKEY = B.KJKEY(+) 
+ 
+                    ) B 
+             WHERE B.KJKEY = A.KJKEY(+)
+               AND B.ATTEND_NO = A.ATTEND_NO(+)
+               AND B.ATTEND_ID = A.ATTEND_ID(+)  
+             GROUP BY B.KJKEY, B.ATTEND_ID, B.LESSN_GRAD,B.DEPT_NM ,B.ATT_ORDR,B.STU_GUBUN,B.EXCPT_YN
+          ) A
+          , E1_CLASS_ATTEND_MST B 
+          , V_ECLASS_USER_INFO C  
+          , E1_MYSETTING D
+      WHERE A.KJKEY = B.KJKEY 
+        AND B.ATTEND_NO =  <param name="ATTEND_NO" index="#" />
+        AND A.ATTEND_ID = C.USER_ID
+        AND A.ATTEND_ID = D.USER_ID(+)
+        AND A.KJKEY = <param name="session.kjkey" index="#" />     
+       ) A
+       ,( SELECT B.KJKEY, B.ATTEND_NO
+                  , B.ATTEND_ID, B.ATTEND_DIV  
+                  , B.UPT_DTM
+                  , B.SMRT_ATTEND_IP
+                  , B.SMRT_ATTEND_DEVICE
+                  , B.SMRT_ATTEND_DTM                
+                  , B.ABS_RSN_CD
+                  , B.ABS_RSN_NOTE 
+                  , CASE WHEN C.ETC_REG_YN ='Y' THEN NULL ELSE C.RSN_NM END  AS ABS_RSN_NM
+               FROM E1_CLASS_ATTEND_MST A 
+                   ,E1_CLASS_ATTEND B
+                   ,E1_ABS_RSN_CODE C
+              WHERE A.KJKEY = B.KJKEY 
+                AND A.ATTEND_NO = B.ATTEND_NO 
+                AND B.ABS_RSN_CD = C.RSN_CD (+)
+                AND A.ATTEND_NO =  <param name="ATTEND_NO" index="#" />
+                AND A.KJKEY = <param name="session.kjkey" index="#" />
+         ) B 
+       ,(
+       
+          SELECT A.KJKEY,A.ATTEND_NO,A.ATTEND_TARGET_DV,A.ATTEND_ID, NVL(B.ATTEND_DIV,'2') ATTEND_DIV
+           FROM (
+                  SELECT A.KJKEY,A.ATTEND_NO,B.ATTEND_TARGET_DV,C.EXCPT_ID AS ATTEND_ID 
+                    FROM E1_CLASS_ATTEND_MST A,E1_LECTURE_WEEKS B,E1_CLASS_ATTEND_EXCPT C
+                   WHERE A.KJKEY =  <param name="session.kjkey" index="#"/>
+                  <isEqual compareValue="Y" property="SUPPLY_LECT_YN">
+                     AND A.LECT_CANCEL_WEEK_NO =  <param name="WEEK_NO" index="#"/>
+                     AND A.LECT_CANCEL_WEEK_TIME = <param name="WEEK_TIME" index="#"/>          
+                  </isEqual>
+                  <isNotEqual compareValue="Y" property="SUPPLY_LECT_YN">
+                     AND A.WEEK_NO =  <param name="WEEK_NO" index="#"/>
+                     AND A.WEEK_TIME = <param name="WEEK_TIME" index="#"/>         
+                  </isNotEqual>
+                     AND A.KJKEY = B.KJKEY
+                     AND A.ATTEND_NO = B.ATTEND_NO
+                     AND <param name="ATTEND_DT" index="#" unmask="./-"/>  BETWEEN C.ST_DT AND C.ED_DT 
+                   GROUP BY A.KJKEY,A.ATTEND_NO,A.ATTEND_DT, B.ATTEND_TARGET_DV,C.EXCPT_ID                      
+               ) A, E1_CLASS_ATTEND B
+           WHERE A.KJKEY = B.KJKEY(+)
+             AND A.ATTEND_NO = B.ATTEND_NO(+)
+             AND A.ATTEND_ID = B.ATTEND_ID(+)  
+         ) C         
+   WHERE A.KJKEY = B.KJKEY(+)
+     AND A.ATTEND_NO = B.ATTEND_NO(+)
+     AND A.ATTEND_ID = B.ATTEND_ID(+)
+     AND A.KJKEY = C.KJKEY(+)
+     AND A.ATTEND_ID = C.ATTEND_ID(+)
+   <isNotEmpty property="SCH_STU_GUBUN" >
+     AND A.STU_GUBUN = <param name="SCH_STU_GUBUN"/>
+   </isNotEmpty>          
+   <isNotEmpty property="SCH_DIV">
+     <isEqual  compareValue="4" property="SCH_DIV">
+       AND B.ATTEND_DIV IS NULL
+     </isEqual>
+     <isNotEqual compareValue="4" property="SCH_DIV">
+       AND B.ATTEND_DIV = <param name="SCH_DIV" index="#"/>                 
+     </isNotEqual>
+   </isNotEmpty>       
+<isNotEmpty property="SCH_VAL">
+     AND ( A.NAME LIKE <param name="SCH_VAL" suffix="%" index="#"/>
+      or   A.COLREG_NO = <param name="SCH_VAL" index="#"/> )
+</isNotEmpty> 
+<isNotEmpty property="ODR">
+  order by <param name="ODR" index="#" quote="no"/>
+</isNotEmpty>  
+<isEmpty property="ODR">
+  order by name, user_id, dept_nm, REGST_GRADE
+</isEmpty> 
+    </query>
+  </executeQuery>  
+  
+  <!--  수정화면 출석정보 합계결과 -->
+  <executeQuery statementType="stmt" id="getAttendResult">
+    <query>
+    SELECT NVL( SUM(DIV_1), 0) AS DIV_1,
+           NVL( SUM(DIV_2), 0) AS DIV_2,
+           NVL( SUM(DIV_3), 0) AS DIV_3,
+           NVL( SUM(DIV_4), 0) AS DIV_4,
+           COUNT(*) AS CNT
+     FROM (SELECT CASE WHEN A.ATTEND_DIV = '1' THEN 1 ELSE 0 END DIV_1
+                 ,CASE WHEN A.ATTEND_DIV = '2' THEN 1 ELSE 0 END DIV_2
+                 ,CASE WHEN A.ATTEND_DIV = '3' THEN 1 ELSE 0 END DIV_3
+                 ,CASE WHEN A.ATTEND_DIV IS NULL THEN 1 ELSE 0 END DIV_4
+                FROM (
+                       SELECT B.KJKEY, B.ATTEND_DT, A.ATTEND_ID
+                              ,B.ATTEND_NO, A.ATTEND_DIV 
+                          FROM E1_CLASS_ATTEND A,E1_CLASS_ATTEND_MST B
+                         WHERE A.KJKEY = B.KJKEY
+                           AND A.ATTEND_NO = B.ATTEND_NO
+                           AND B.KJKEY = <param name="session.kjkey" index="#" />
+                           AND B.ATTEND_NO = <param name="ATTEND_NO" index="#" />
+                    ) A,
+                    E1_CLASS_LECTURE B,
+                    HAK_COURSE_APPLY C,
+                    V_ECLASS_USER_INFO D
+               WHERE B.KJKEY = <param name="session.kjkey" index="#"/>
+                 AND C.RESLT_DESTR_CD = 'N'
+                 AND C.LEDG_YEAR = B.YEAR
+                 AND C.LEDG_SESSN = B.TERM
+                 AND C.ORG_SECT = B.ORG_SECT
+                 AND C.LSSN_CD = B.LSSN_CD
+                 AND C.SUBJT_NO = B.SUBJT_NO
+                 AND C.COLREG_NO = D.USER_ID
+                 AND D.USER_ID = A.ATTEND_ID(+)
+               <isNotEmpty property="SCH_STU_GUBUN" >
+                 AND  'S' = <param name="SCH_STU_GUBUN"/>
+               </isNotEmpty>          
+               <isNotEmpty property="SCH_DIV">
+                 <isEqual  compareValue="4" property="SCH_DIV">
+                   AND A.ATTEND_DIV IS NULL
+                 </isEqual>
+                 <isNotEqual compareValue="4" property="SCH_DIV">
+                   AND A.ATTEND_DIV = <param name="SCH_DIV" index="#"/>                 
+                 </isNotEqual>
+               </isNotEmpty>                          
+                <isNotEmpty property="SCH_VAL">
+                     AND ( D.NAME LIKE <param name="SCH_VAL" suffix="%" index="#"/>
+                      or D.COLREG_NO = <param name="SCH_VAL" index="#"/> )
+                </isNotEmpty>                 
+              UNION ALL
+              SELECT CASE WHEN A.ATTEND_DIV = '1' THEN 1 ELSE 0 END DIV_1
+                    ,CASE WHEN A.ATTEND_DIV = '2' THEN 1 ELSE 0 END DIV_2
+                    ,CASE WHEN A.ATTEND_DIV = '3' THEN 1 ELSE 0 END DIV_3
+                    ,CASE WHEN A.ATTEND_DIV IS NULL THEN 1 ELSE 0 END DIV_4
+                FROM (
+                       SELECT B.KJKEY, B.ATTEND_DT, A.ATTEND_ID
+                              ,B.ATTEND_NO, A.ATTEND_DIV 
+                          FROM E1_CLASS_ATTEND A,E1_CLASS_ATTEND_MST B
+                         WHERE A.KJKEY = B.KJKEY
+                           AND A.ATTEND_NO = B.ATTEND_NO
+                           AND B.KJKEY = <param name="session.kjkey" index="#" />
+                           AND B.ATTEND_NO = <param name="ATTEND_NO" index="#" />
+                     ) A,
+                     E1_CLASS_LECTURE B,
+                     E1_CLASS_AUDITOR C,
+                     V_ECLASS_USER_INFO D 
+              WHERE B.KJKEY = <param name="session.kjkey" index="#"/>
+                AND C.KJKEY = B.KJKEY
+                AND C.AUDITOR_ID = D.USER_ID
+                AND C.SU_DECISION = '2'
+                AND C.AUDITOR_DIV = '2'
+                AND D.USER_ID = A.ATTEND_ID(+)
+               <isNotEmpty property="SCH_STU_GUBUN" >
+                AND CASE WHEN C.AUDITOR_DIV = '1' THEN 'A' ELSE 'S' END   = <param name="SCH_STU_GUBUN"/>
+               </isNotEmpty>      
+               <isNotEmpty property="SCH_DIV">
+                 <isEqual  compareValue="4" property="SCH_DIV">
+                   AND A.ATTEND_DIV IS NULL
+                 </isEqual>
+                 <isNotEqual compareValue="4" property="SCH_DIV">
+                   AND A.ATTEND_DIV = <param name="SCH_DIV" index="#"/>                 
+                 </isNotEqual>
+               </isNotEmpty>                          
+                <isNotEmpty property="SCH_VAL">
+                     AND ( D.NAME LIKE <param name="SCH_VAL" suffix="%" index="#"/>
+                      or D.COLREG_NO = <param name="SCH_VAL" index="#"/> )
+                </isNotEmpty>                    
+          ) A      
+    </query>
+  </executeQuery>
+  
+  
+  <!--  온라인 출석 출석 비율 및 출석정보 보여주기  -->
+  <executeQuery statementType="stmt" id="getOnlineAttendList">
+    <query>
+       SELECT  A.KJKEY, A.USER_ID AS COLREG_NO , nvl(D.COLREG_NO,A.USER_ID) as COLREG_NO2
+              ,CASE WHEN B.ATTEND_DIV  IS NULL THEN '' ELSE B.ATTEND_DIV END ATTEND_DIV
+              ,CASE WHEN B.ATTEND_DIV = '1' THEN '출석'
+                    WHEN B.ATTEND_DIV = '2' THEN '결석'
+                    WHEN B.ATTEND_DIV = '3' THEN '지각' ELSE '' END AS ATTEND_DIV_NM
+              ,D.NAME
+              ,NVL(D.DEPT_NM,C.DEPT_NM) as DEPT_NM
+              ,CASE WHEN NVL(D.REGST_GRADE,C.LESSN_GRAD) <![CDATA[ < ]]> '4' THEN '4' ELSE  NVL(D.REGST_GRADE,C.LESSN_GRAD) END  as REGST_GRADE
+              ,D.GUBUN 
+              ,A.ONLINE_ATTEND_DIV
+              ,A.EX_ATTEND_RT
+              ,A.ATTEND_RT    
+              ,C.STU_GUBUN 
+              ,C.ATT_ORDR  
+              ,e.PHOTO_DIR_ID  AS PHOTO_DIR_ID
+              ,e.PHOTO_EXT  AS PHOTO_EXT   
+              , A.USER_ID  
+              ,c.div_1 
+              ,c.div_2
+              ,c.div_3
+              ,c.div_4     
+              ,a.user_id as ATTEND_ID   
+              , B.ABS_RSN_CD
+              , B.ABS_RSN_NOTE 
+              , B.ABS_RSN_NM  AS ABS_RSN_NM              
+         FROM (
+            SELECT A.kjkey, A.user_id,A.lecture_weeks, b.attend_no,
+                   CASE WHEN A.ATTEND_RT >= C.TERM_ATTEND_RATE THEN '1'
+                        WHEN A.ATTEND_RT >= C.TERM_LATE_RATE AND A.ATTEND_RT <![CDATA[ <= ]]> C.TERM_ATTEND_RATE THEN '3' 
+                        WHEN (A.ATTEND_RT+A.EX_ATTEND_RT) >= C.TERM_EX_LATE_RT THEN '3'
+                        ELSE '2' END ONLINE_ATTEND_DIV
+                  ,A.ATTEND_RT       
+                  ,A.EX_ATTEND_RT 
+            FROM (
+                     SELECT A.KJKEY,A.USER_ID,A.LECTURE_WEEKS,SUM(ATTEND_TM) AS TOTAL_ATTEND_TM,SUM(ATTEND_MIN_TM) AS TOTAL_ATTEND_MIN_TM
+                           ,SUM(EX_ATTEND_TM) AS TOTAL_EX_ATTEND_TM
+                           ,CASE WHEN SUM(ATTEND_MIN_TM) = 0 
+                                 THEN CASE WHEN SUM(ORG_ATTEND_TM) > 0
+                                           THEN 100
+                                           ELSE 0 
+                                       END
+                                 ELSE TRUNC(SUM(ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100) 
+                             END AS ATTEND_RT
+                           ,CASE WHEN SUM(ATTEND_MIN_TM) = 0 
+                                 THEN CASE WHEN SUM(ORG_EX_ATTEND_TM) > 0
+                                           THEN 100
+                                           ELSE 0
+                                       END 
+                                 ELSE TRUNC(SUM(EX_ATTEND_TM+ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100 )  -  TRUNC( SUM(ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100 ) END AS EX_ATTEND_RT
+                           ,SUM(ORG_ATTEND_TM) AS ORG_ATTEND_TM
+                           ,SUM(ORG_EX_ATTEND_TM) AS ORG_EX_ATTEND_TM 
+                      FROM (
+                              SELECT A.KJKEY,A.USER_ID,A.LECTURE_WEEKS
+                                    ,A.ATTEND_TM
+                                    ,CASE WHEN NVL(A.ATTEND_MIN_TM,0) - NVL(A.ATTEND_TM,0)  >  NVL(A.EX_ATTEND_TM,0)  
+                                          THEN NVL(A.EX_ATTEND_TM,0)  ELSE   NVL(A.ATTEND_MIN_TM,0)- NVL(A.ATTEND_TM,0)  END EX_ATTEND_TM
+                                    ,NVL(A.ATTEND_MIN_TM ,0) AS ATTEND_MIN_TM
+                                    ,NVL(A.ORG_ATTEND_TM,0) AS ORG_ATTEND_TM
+                                    ,NVL(A.EX_ATTEND_TM,0) AS ORG_EX_ATTEND_TM
+                              FROM  (
+                                      SELECT B.USER_ID,B.KJKEY,B.LECTURE_WEEKS,B.LINK_SEQ
+                                            ,B.ATTEND_MIN_TM   AS ATTEND_MIN_TM
+                                            ,CASE WHEN NVL(A.ATTEND_TM,0) > NVL(B.ATTEND_MIN_TM,0) THEN NVL(B.ATTEND_MIN_TM,0) ELSE NVL(A.ATTEND_TM,0) END AS ATTEND_TM
+                                            ,A.ATTEND_TM    AS ORG_ATTEND_TM
+                                            ,A.EX_ATTEND_TM AS EX_ATTEND_TM
+                                        FROM (
+                                               SELECT A.USER_ID,A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ
+                                                     ,SUM(A.EDU_MIN)  AS ATTEND_TM
+                                                     ,SUM(A.EX_EDU_MIN)  AS EX_ATTEND_TM
+                                                 FROM (
+                                                         SELECT A.USER_ID,A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ
+                                                               ,case when A.EDU_ST_DTM <![CDATA[ < ]]>  B.MAX_LECTURE_EDT then 
+                                                                          TRUNC(ROUND( ((TO_DATE(A.EDU_ED_DTM,'YYYYMMDDHH24MISS')-TO_DATE(A.EDU_ST_DTM,'YYYYMMDDHH24MISS')) )*24*60*60))
+                                                                     else null end AS EDU_MIN
+                                                               ,case when A.EDU_ST_DTM >=  B.MAX_LECTURE_EDT AND A.EDU_ST_DTM  <![CDATA[ <= ]]>  B.LAST_LECTURE_EDT THEN 
+                                                                          TRUNC(ROUND( ((TO_DATE(A.EDU_ED_DTM,'YYYYMMDDHH24MISS')-TO_DATE(A.EDU_ST_DTM,'YYYYMMDDHH24MISS')) )*24*60*60))
+                                                                     else null end AS EX_EDU_MIN   
+                                                               ,A.EDU_ST_DTM,A.EDU_ED_DTM
+                                                               ,B.MIN_LECTURE_SDT,B.MAX_LECTURE_EDT
+                                                           FROM E1_WEEKS_ATTEND A,
+                                                               (
+                                                                 SELECT A.KJKEY,A.LECTURE_WEEKS
+                                                                       ,CASE WHEN A.ATTEND_BS = '1' THEN '00000000000000'
+                                                                             WHEN A.ATTEND_BS = '2' THEN A.LECTURE_SDT||'00'
+                                                                             WHEN A.ATTEND_BS = '3' THEN '00000000000000'
+                                                                             ELSE A.LECTURE_SDT||'00' end AS MIN_LECTURE_SDT
+                                                                       ,CASE WHEN A.ATTEND_BS = '1' THEN '99991231235959'
+                                                                             WHEN A.ATTEND_BS = '2' THEN A.LECTURE_EDT||'59'
+                                                                             WHEN A.ATTEND_BS = '3' THEN A.LECTURE_EDT||'59'
+                                                                             ELSE A.LECTURE_EDT||'59' end AS MAX_LECTURE_EDT
+                                                                       ,F_LATE_MAX_ALLOW_DT(A.KJKEY) AS LAST_LECTURE_EDT
+                                                                   FROM E1_LECTURE_WEEKS A 
+                                                                  WHERE A.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                                    AND A.LECTURE_WEEKS =  <param name="LECTURE_WEEKS" index="#"/>
+                                                               ) B 
+                                                          WHERE B.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                            AND A.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#"/>
+                                                            AND A.KJKEY = B.KJKEY
+                                                            AND A.LECTURE_WEEKS = B.LECTURE_WEEKS
+                                                            AND A.EDU_ST_DTM IS NOT NULL
+                                                            AND A.EDU_ED_DTM IS NOT NULL 
+                                                      ) A
+                                                GROUP BY A.USER_ID,A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ 
+                                              ) A, 
+                                              (
+                                                  select a.kjkey, A.LECTURE_WEEKS,(NVL(B.ATTEND_MIN_TM,0)*60)+NVL(B.ATTEND_SEC_TM,0) AS ATTEND_MIN_TM
+                                                         ,B.LINK_SEQ,C.user_id 
+                                                    from  E1_LECTURE_WEEKS A, E1_CONTENTS_LINK B, 
+                                                          (
+                                                            SELECT B.KJKEY,C.COLREG_NO as user_id
+                                                              FROM E1_CLASS_LECTURE B
+                                                                  ,HAK_COURSE_APPLY C
+                                                             WHERE B.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                               AND B.ORG_SECT = C.ORG_SECT
+                                                               AND B.YEAR = C.LEDG_YEAR
+                                                               AND B.TERM = C.LEDG_SESSN
+                                                               AND B.LSSN_CD = C.LSSN_CD
+                                                               AND B.SUBJT_NO = C.SUBJT_NO
+                                                               AND C.RESLT_DESTR_CD = 'N'  
+                                                           union all
+                                                            SELECT a.KJKEY,a.auditor_id as user_id
+                                                              FROM e1_class_auditor a 
+                                                             WHERE a.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                               and A.SU_DECISION = '2'
+                                                               AND A.AUDITOR_DIV = '2'                                                              
+                                                          ) C
+                                                    where A.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                      AND A.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#"/>
+                                                      AND A.KJKEY = B.KJKEY(+)
+                                                      AND A.LECTURE_WEEKS = B.LECTURE_WEEKS(+)
+                                                      and A.kjkey = C.kjkey                                                                                                     
+                                              ) B
+                                      WHERE B.KJKEY = A.KJKEY(+)
+                                        AND B.LECTURE_WEEKS = A.LECTURE_WEEKS(+)
+                                        AND B.LINK_SEQ = A.LINK_SEQ(+)  
+                                        AND B.USER_ID = A.USER_ID(+)
+                                        AND B.KJKEY = <param name="session.kjkey" index="#"/>
+                                        AND B.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#"/>
+                                    ) A   
+                           ) A 
+                        GROUP BY A.KJKEY,A.LECTURE_WEEKS,A.USER_ID                               
+                 ) A, e1_lecture_weeks B, E1_ONLINE_ATTEND_BASE C
+           WHERE A.KJKEY = B.KJKEY
+             AND A.LECTURE_WEEKS = B.LECTURE_WEEKS 
+             AND A.KJKEY = <param name="session.kjkey" index="#"/>
+             AND A.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#"/>
+          ) A
+         ,( 
+            SELECT B.KJKEY, B.ATTEND_NO
+                 , B.ATTEND_ID, B.ATTEND_DIV               
+                 , B.ABS_RSN_CD
+                 , B.ABS_RSN_NOTE 
+                 , CASE WHEN ETC_REG_YN = 'Y' THEN NULL ELSE C.RSN_NM  END AS ABS_RSN_NM
+             FROM E1_CLASS_ATTEND_MST A 
+                 ,E1_CLASS_ATTEND B
+                 ,E1_ABS_RSN_CODE C
+                 ,E1_LECTURE_WEEKS D
+            WHERE A.KJKEY = B.KJKEY 
+              AND A.ATTEND_NO = B.ATTEND_NO 
+              AND B.ABS_RSN_CD = C.RSN_CD (+) 
+              AND A.KJKEY = <param name="session.kjkey" index="#"/>
+              AND A.KJKEY = D.KJKEY
+              AND A.ATTEND_NO = D.ATTEND_NO
+              AND D.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#"/>
+           ) B 
+          ,(
+               select  B.KJKEY
+                      ,B.ATTEND_ID AS ATTEND_ID  
+                      ,MIN(B.LESSN_GRAD) AS LESSN_GRAD
+                      ,MIN(B.DEPT_NM) AS DEPT_NM
+                      ,MIN(B.STU_GUBUN)  STU_GUBUN
+                      ,MIN(B.ATT_ORDR)  AS ATT_ORDR                        
+                      ,SUM(case when A.ATTEND_DIV = '1' then A.ATTEND_CNT else 0 end) div_1
+                      ,SUM(case when A.attend_div = '2' then A.ATTEND_CNT else 0 end) div_2
+                      ,SUM(case when A.attend_div = '3' then A.ATTEND_CNT else 0 end) div_3
+                      ,SUM(case when C.CNT > 0 AND A.attend_div is null then 1 else 0 end) div_4
+                from 
+                     (
+                      SELECT B.KJKEY, B.ATTEND_ID, B.ATTEND_DIV ,count(0) as ATTEND_CNT 
+                        FROM E1_CLASS_ATTEND_MST A,
+                             E1_CLASS_ATTEND B
+                       WHERE A.KJKEY = B.KJKEY
+                         AND A.ATTEND_NO = B.ATTEND_NO
+                         AND A.KJKEY = <param name="session.kjkey" index="#"/>
+                         AND ATTEND_MST_DIV IN ('1','2','3','4','5')
+                      GROUP BY  B.KJKEY, B.ATTEND_ID, B.ATTEND_DIV   
+                     ) A
+                    ,(
+                        SELECT B.KJKEY 
+                             , C.COLREG_NO AS ATTEND_ID,C.LESSN_GRAD, C.DEPT_NM
+                             ,'S' AS STU_GUBUN
+                             , C.ATT_ORDR  AS ATT_ORDR                        
+                          FROM E1_CLASS_LECTURE B
+                              ,HAK_COURSE_APPLY C
+                         WHERE B.KJKEY = <param name="session.kjkey" index="#"/>
+                           AND B.ORG_SECT = C.ORG_SECT
+                           AND B.YEAR = C.LEDG_YEAR
+                           AND B.TERM = C.LEDG_SESSN
+                           AND B.LSSN_CD = C.LSSN_CD
+                           AND B.SUBJT_NO = C.SUBJT_NO
+                           AND C.RESLT_DESTR_CD = 'N'  
+                       union all
+                        SELECT a.KJKEY,a.auditor_id as ATTEND_ID
+                              ,A.GRADE lessn_grad, A.DEPT_NM
+                              ,CASE WHEN A.AUDITOR_DIV = '1' THEN 'A' ELSE 'S' END AS STU_GUBUN
+                              ,null AS ATT_ORDR                              
+                          FROM e1_class_auditor a 
+                         WHERE A.KJKEY = <param name="session.kjkey" index="#"/>
+                           and A.SU_DECISION = '2'
+                           AND A.AUDITOR_DIV = '2'                                                              
+                    ) B
+                    ,(SELECT KJKEY, COUNT(0) AS CNT 
+                        FROM E1_CLASS_ATTEND_MST
+                       WHERE KJKEY =  <param name="session.kjkey" index="#"/>
+                         AND ATTEND_MST_DIV IN ('1','2','3','4','5')
+                       GROUP BY KJKEY
+                     ) C                  
+            where B.kjkey = A.kjkey(+)
+              and B.ATTEND_ID = A.ATTEND_ID(+)
+              and B.kjkey = c.kjkey(+)
+              and b.kjkey = <param name="session.kjkey" index="#"/>
+            GROUP BY B.KJKEY ,B.ATTEND_ID            
+          ) C
+          ,V_ECLASS_USER_INFO D     
+          ,E1_MYSETTING E   
+    where a.kjkey = b.kjkey(+)
+      and a.attend_no = b.attend_no(+)
+      and a.user_id = b.attend_id(+)
+      AND A.KJKEY = C.KJKEY
+      AND A.USER_ID = C.ATTEND_ID
+      AND A.USER_ID = D.USER_ID  
+      AND A.USER_ID = E.USER_ID(+) 
+     <isNotEmpty property="SCH_VAL">
+       AND (    D.NAME LIKE <param name="SCH_VAL" index="#" suffix="%"/>
+             OR D.COLREG_NO = <param name="SCH_VAL"  index="#" />
+           )
+     </isNotEmpty>        
+     <isNotEmpty property="SCH_STU_GUBUN">
+       AND C.STU_GUBUN  = <param name="SCH_STU_GUBUN"/>
+     </isNotEmpty>   
+     <isNotEmpty property="SCH_DIV">
+       <isEqual  compareValue="4" property="SCH_DIV">
+         AND B.ATTEND_DIV IS NULL
+       </isEqual>
+       <isNotEqual compareValue="4" property="SCH_DIV">
+         AND B.ATTEND_DIV = <param name="SCH_DIV" index="#"/>                 
+       </isNotEqual>
+     </isNotEmpty>  
+      <isNotEmpty property="ODR">
+        order by <param name="ODR" index="#" quote="no"/>
+      </isNotEmpty>
+      <isEmpty property="ODR">
+        order by name, colreg_no, dept_nm, regst_grade
+      </isEmpty>       
+    </query>
+  </executeQuery>
+  
+  <!--  온라인 출석 출석 비율 및 출석정보 보여주기  -->
+  <executeQuery statementType="stmt" id="getOnlineAttendList2">
+    <query>
+       SELECT  A.KJKEY, A.USER_ID AS COLREG_NO , nvl(D.COLREG_NO,A.USER_ID) as COLREG_NO2
+              ,CASE WHEN B.ATTEND_DIV  IS NULL THEN '' ELSE B.ATTEND_DIV END ATTEND_DIV
+              ,CASE WHEN B.ATTEND_DIV = '1' THEN '출석'
+                    WHEN B.ATTEND_DIV = '2' THEN '결석'
+                    WHEN B.ATTEND_DIV = '3' THEN '지각' ELSE '' END AS ATTEND_DIV_NM
+              ,D.NAME
+              ,NVL(D.DEPT_NM,C.DEPT_NM) as DEPT_NM
+              ,CASE WHEN NVL(D.REGST_GRADE,C.LESSN_GRAD) <![CDATA[ < ]]> '4' THEN '4' ELSE  NVL(D.REGST_GRADE,C.LESSN_GRAD) END  as REGST_GRADE
+              ,D.GUBUN 
+              ,A.ONLINE_ATTEND_DIV
+              ,A.EX_ATTEND_RT
+              ,A.ATTEND_RT    
+              ,C.STU_GUBUN 
+              ,C.ATT_ORDR  
+              ,e.PHOTO_DIR_ID  AS PHOTO_DIR_ID
+              ,e.PHOTO_EXT  AS PHOTO_EXT   
+              , A.USER_ID  
+              ,c.div_1 
+              ,c.div_2
+              ,c.div_3
+              ,c.div_4     
+              ,a.user_id as ATTEND_ID   
+              , B.ABS_RSN_CD
+              , B.ABS_RSN_NOTE 
+              , B.ABS_RSN_NM  AS ABS_RSN_NM              
+         FROM (
+            SELECT A.kjkey, A.user_id,A.lecture_weeks, b.attend_no,
+                   CASE WHEN A.ATTEND_RT >= C.TERM_ATTEND_RATE THEN '1'
+                        WHEN A.ATTEND_RT >= C.TERM_LATE_RATE AND A.ATTEND_RT <![CDATA[ <= ]]> C.TERM_ATTEND_RATE THEN '3' 
+                        WHEN (A.ATTEND_RT+A.EX_ATTEND_RT) >= C.TERM_EX_LATE_RT THEN '3'
+                        ELSE '2' END ONLINE_ATTEND_DIV
+                  ,A.ATTEND_RT       
+                  ,A.EX_ATTEND_RT 
+            FROM (
+                     SELECT A.KJKEY,A.USER_ID,A.LECTURE_WEEKS,SUM(ATTEND_TM) AS TOTAL_ATTEND_TM,SUM(ATTEND_MIN_TM) AS TOTAL_ATTEND_MIN_TM
+                           ,SUM(EX_ATTEND_TM) AS TOTAL_EX_ATTEND_TM
+                           ,CASE WHEN SUM(ATTEND_MIN_TM) = 0 
+                                 THEN CASE WHEN SUM(ORG_ATTEND_TM) > 0
+                                           THEN 100
+                                           ELSE 0 
+                                       END
+                                 ELSE TRUNC(SUM(ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100) 
+                             END AS ATTEND_RT
+                           ,CASE WHEN SUM(ATTEND_MIN_TM) = 0 
+                                 THEN CASE WHEN SUM(ORG_EX_ATTEND_TM) > 0
+                                           THEN 100
+                                           ELSE 0
+                                       END 
+                                 ELSE TRUNC(SUM(EX_ATTEND_TM+ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100 )  -  TRUNC( SUM(ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100 ) END AS EX_ATTEND_RT
+                           ,SUM(ORG_ATTEND_TM) AS ORG_ATTEND_TM
+                           ,SUM(ORG_EX_ATTEND_TM) AS ORG_EX_ATTEND_TM 
+                      FROM (
+                              SELECT A.KJKEY,A.USER_ID,A.LECTURE_WEEKS
+                                    ,A.ATTEND_TM
+                                    ,CASE WHEN NVL(A.ATTEND_MIN_TM,0) - NVL(A.ATTEND_TM,0)  >  NVL(A.EX_ATTEND_TM,0)  
+                                          THEN NVL(A.EX_ATTEND_TM,0)  ELSE   NVL(A.ATTEND_MIN_TM,0)- NVL(A.ATTEND_TM,0)  END EX_ATTEND_TM
+                                    ,NVL(A.ATTEND_MIN_TM ,0) AS ATTEND_MIN_TM
+                                    ,NVL(A.ORG_ATTEND_TM,0) AS ORG_ATTEND_TM
+                                    ,NVL(A.EX_ATTEND_TM,0) AS ORG_EX_ATTEND_TM
+                              FROM  (
+                                      SELECT B.USER_ID,B.KJKEY,B.LECTURE_WEEKS,B.LINK_SEQ
+                                            ,B.ATTEND_MIN_TM   AS ATTEND_MIN_TM
+                                            ,CASE WHEN NVL(A.ATTEND_TM,0) > NVL(B.ATTEND_MIN_TM,0) THEN NVL(B.ATTEND_MIN_TM,0) ELSE NVL(A.ATTEND_TM,0) END AS ATTEND_TM
+                                            ,A.ATTEND_TM    AS ORG_ATTEND_TM
+                                            ,A.EX_ATTEND_TM AS EX_ATTEND_TM
+                                        FROM (
+                                               SELECT A.USER_ID,A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ
+                                                     ,SUM(A.EDU_MIN)  AS ATTEND_TM
+                                                     ,SUM(A.EX_EDU_MIN)  AS EX_ATTEND_TM
+                                                 FROM (
+                                                         SELECT A.USER_ID,A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ
+                                                               ,case when A.EDU_ST_DTM <![CDATA[ < ]]>  B.MAX_LECTURE_EDT then 
+                                                                          TRUNC(ROUND( ((TO_DATE(A.EDU_ED_DTM,'YYYYMMDDHH24MISS')-TO_DATE(A.EDU_ST_DTM,'YYYYMMDDHH24MISS')) )*24*60*60))
+                                                                     else null end AS EDU_MIN
+                                                               ,case when A.EDU_ST_DTM >=  B.MAX_LECTURE_EDT AND A.EDU_ST_DTM  <![CDATA[ <= ]]>  B.LAST_LECTURE_EDT THEN 
+                                                                          TRUNC(ROUND( ((TO_DATE(A.EDU_ED_DTM,'YYYYMMDDHH24MISS')-TO_DATE(A.EDU_ST_DTM,'YYYYMMDDHH24MISS')) )*24*60*60))
+                                                                     else null end AS EX_EDU_MIN   
+                                                               ,A.EDU_ST_DTM,A.EDU_ED_DTM
+                                                               ,B.MIN_LECTURE_SDT,B.MAX_LECTURE_EDT
+                                                           FROM E1_WEEKS_ATTEND A,
+                                                               (
+                                                                 SELECT A.KJKEY,A.LECTURE_WEEKS
+                                                                       ,CASE WHEN A.ATTEND_BS = '1' THEN '00000000000000'
+                                                                             WHEN A.ATTEND_BS = '2' THEN A.LECTURE_SDT||'00'
+                                                                             WHEN A.ATTEND_BS = '3' THEN '00000000000000'
+                                                                             ELSE A.LECTURE_SDT||'00' end AS MIN_LECTURE_SDT
+                                                                       ,CASE WHEN A.ATTEND_BS = '1' THEN '99991231235959'
+                                                                             WHEN A.ATTEND_BS = '2' THEN A.LECTURE_EDT||'59'
+                                                                             WHEN A.ATTEND_BS = '3' THEN A.LECTURE_EDT||'59'
+                                                                             ELSE A.LECTURE_EDT||'59' end AS MAX_LECTURE_EDT
+                                                                       ,F_LATE_MAX_ALLOW_DT(A.KJKEY) AS LAST_LECTURE_EDT
+                                                                   FROM E1_LECTURE_WEEKS A 
+                                                                  WHERE A.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                                    AND A.LECTURE_WEEKS =  <param name="LECTURE_WEEKS" index="#"/>
+                                                               ) B 
+                                                          WHERE B.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                            AND A.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#"/>
+                                                            AND A.KJKEY = B.KJKEY
+                                                            AND A.LECTURE_WEEKS = B.LECTURE_WEEKS
+                                                            AND A.EDU_ST_DTM IS NOT NULL
+                                                            AND A.EDU_ED_DTM IS NOT NULL 
+                                                      ) A
+                                                GROUP BY A.USER_ID,A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ 
+                                              ) A, 
+                                              (
+                                                  select a.kjkey, A.LECTURE_WEEKS,(NVL(B.ATTEND_MIN_TM,0)*60)+NVL(B.ATTEND_SEC_TM,0) AS ATTEND_MIN_TM
+                                                         ,B.LINK_SEQ,C.user_id 
+                                                    from  E1_LECTURE_WEEKS A, E1_CONTENTS_LINK B, 
+                                                          (
+                                                            SELECT B.KJKEY,C.COLREG_NO as user_id
+                                                              FROM E1_CLASS_LECTURE B
+                                                                  ,HAK_COURSE_APPLY C
+                                                             WHERE B.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                               AND B.ORG_SECT = C.ORG_SECT
+                                                               AND B.YEAR = C.LEDG_YEAR
+                                                               AND B.TERM = C.LEDG_SESSN
+                                                               AND B.LSSN_CD = C.LSSN_CD
+                                                               AND B.SUBJT_NO = C.SUBJT_NO
+                                                               AND C.RESLT_DESTR_CD = 'N'  
+                                                           union all
+                                                            SELECT a.KJKEY,a.auditor_id as user_id
+                                                              FROM e1_class_auditor a 
+                                                             WHERE a.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                               and A.SU_DECISION = '2'
+                                                               AND A.AUDITOR_DIV = '2'                                                              
+                                                          ) C
+                                                    where A.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                      AND A.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#"/>
+                                                      AND A.KJKEY = B.KJKEY(+)
+                                                      AND A.LECTURE_WEEKS = B.LECTURE_WEEKS(+)
+                                                      and A.kjkey = C.kjkey                                                                                                     
+                                              ) B
+                                      WHERE B.KJKEY = A.KJKEY(+)
+                                        AND B.LECTURE_WEEKS = A.LECTURE_WEEKS(+)
+                                        AND B.LINK_SEQ = A.LINK_SEQ(+)  
+                                        AND B.USER_ID = A.USER_ID(+)
+                                        AND B.KJKEY = <param name="session.kjkey" index="#"/>
+                                        AND B.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#"/>
+                                    ) A   
+                           ) A 
+                        GROUP BY A.KJKEY,A.LECTURE_WEEKS,A.USER_ID                               
+                 ) A, e1_lecture_weeks B, E1_ONLINE_ATTEND_BASE C
+           WHERE A.KJKEY = B.KJKEY
+             AND A.LECTURE_WEEKS = B.LECTURE_WEEKS 
+             AND A.KJKEY = <param name="session.kjkey" index="#"/>
+             AND A.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#"/>
+          ) A
+         ,( 
+            SELECT B.KJKEY, B.ATTEND_NO
+                 , B.ATTEND_ID, B.ATTEND_DIV               
+                 , B.ABS_RSN_CD
+                 , B.ABS_RSN_NOTE 
+                 , CASE WHEN ETC_REG_YN = 'Y' THEN NULL ELSE C.RSN_NM  END AS ABS_RSN_NM
+             FROM E1_CLASS_ATTEND_MST A 
+                 ,E1_CLASS_ATTEND B
+                 ,E1_ABS_RSN_CODE C
+                 ,E1_LECTURE_WEEKS D
+            WHERE A.KJKEY = B.KJKEY 
+              AND A.ATTEND_NO = B.ATTEND_NO 
+              AND B.ABS_RSN_CD = C.RSN_CD (+) 
+              AND A.KJKEY = <param name="session.kjkey" index="#"/>
+              AND A.KJKEY = D.KJKEY
+              AND A.ATTEND_NO = D.ATTEND_NO
+              AND D.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#"/>
+           ) B 
+          ,(
+               select  B.KJKEY
+                      ,B.ATTEND_ID AS ATTEND_ID  
+                      ,MIN(B.LESSN_GRAD) AS LESSN_GRAD
+                      ,MIN(B.DEPT_NM) AS DEPT_NM
+                      ,MIN(B.STU_GUBUN)  STU_GUBUN
+                      ,MIN(B.ATT_ORDR)  AS ATT_ORDR                        
+                      ,SUM(case when A.ATTEND_DIV = '1' then A.ATTEND_CNT else 0 end) div_1
+                      ,SUM(case when A.attend_div = '2' then A.ATTEND_CNT else 0 end) div_2
+                      ,SUM(case when A.attend_div = '3' then A.ATTEND_CNT else 0 end) div_3
+                      ,SUM(case when C.CNT > 0 AND A.attend_div is null then 1 else 0 end) div_4
+                from 
+                     (
+                      SELECT B.KJKEY, B.ATTEND_ID, B.ATTEND_DIV ,count(0) as ATTEND_CNT 
+                        FROM E1_CLASS_ATTEND_MST A,
+                             E1_CLASS_ATTEND B
+                       WHERE A.KJKEY = B.KJKEY
+                         AND A.ATTEND_NO = B.ATTEND_NO
+                         AND A.KJKEY = <param name="session.kjkey" index="#"/>
+                         AND ATTEND_MST_DIV IN ('1','2','3','4','5')
+                      GROUP BY  B.KJKEY, B.ATTEND_ID, B.ATTEND_DIV   
+                     ) A
+                    ,(
+                        SELECT B.KJKEY 
+                             , C.COLREG_NO AS ATTEND_ID,C.LESSN_GRAD, C.DEPT_NM
+                             ,'S' AS STU_GUBUN
+                             , C.ATT_ORDR  AS ATT_ORDR                        
+                          FROM E1_CLASS_LECTURE B
+                              ,HAK_COURSE_APPLY C
+                         WHERE B.KJKEY = <param name="session.kjkey" index="#"/>
+                           AND B.ORG_SECT = C.ORG_SECT
+                           AND B.YEAR = C.LEDG_YEAR
+                           AND B.TERM = C.LEDG_SESSN
+                           AND B.LSSN_CD = C.LSSN_CD
+                           AND B.SUBJT_NO = C.SUBJT_NO
+                           AND C.RESLT_DESTR_CD = 'N'  
+                       union all
+                        SELECT a.KJKEY,a.auditor_id as ATTEND_ID
+                              ,A.GRADE lessn_grad, A.DEPT_NM
+                              ,CASE WHEN A.AUDITOR_DIV = '1' THEN 'A' ELSE 'S' END AS STU_GUBUN
+                              ,null AS ATT_ORDR                              
+                          FROM e1_class_auditor a 
+                         WHERE A.KJKEY = <param name="session.kjkey" index="#"/>
+                           and A.SU_DECISION = '2'
+                           AND A.AUDITOR_DIV = '2'                                                              
+                    ) B
+                    ,(SELECT KJKEY, COUNT(0) AS CNT 
+                        FROM E1_CLASS_ATTEND_MST
+                       WHERE KJKEY =  <param name="session.kjkey" index="#"/>
+                         AND ATTEND_MST_DIV IN ('1','2','3','4','5')
+                       GROUP BY KJKEY
+                     ) C   
+                    ,(SELECT EXCPT_ID
+                        FROM E1_CLASS_ATTEND_EXCPT
+                       WHERE KJKEY = <param name="session.kjkey" index="#"/>
+                         AND <param name="ATTEND_DT" index="#" unmask="/.-"/> BETWEEN ST_DT AND ED_DT) D               
+            where B.kjkey = A.kjkey(+)
+              and B.ATTEND_ID = A.ATTEND_ID(+)
+              and B.kjkey = c.kjkey(+)
+              and b.kjkey = <param name="session.kjkey" index="#"/>
+              AND B.ATTEND_ID = D.EXCPT_ID
+            GROUP BY B.KJKEY ,B.ATTEND_ID            
+          ) C
+          ,V_ECLASS_USER_INFO D     
+          ,E1_MYSETTING E   
+    where a.kjkey = b.kjkey(+)
+      and a.attend_no = b.attend_no(+)
+      and a.user_id = b.attend_id(+)
+      AND A.KJKEY = C.KJKEY
+      AND A.USER_ID = C.ATTEND_ID
+      AND A.USER_ID = D.USER_ID  
+      AND A.USER_ID = E.USER_ID(+) 
+     <isNotEmpty property="SCH_VAL">
+       AND (    D.NAME LIKE <param name="SCH_VAL" index="#" suffix="%"/>
+             OR D.COLREG_NO = <param name="SCH_VAL"  index="#" />
+           )
+     </isNotEmpty>        
+     <isNotEmpty property="SCH_STU_GUBUN">
+       AND C.STU_GUBUN  = <param name="SCH_STU_GUBUN"/>
+     </isNotEmpty>   
+     <isNotEmpty property="SCH_DIV">
+       <isEqual  compareValue="4" property="SCH_DIV">
+         AND B.ATTEND_DIV IS NULL
+       </isEqual>
+       <isNotEqual compareValue="4" property="SCH_DIV">
+         AND B.ATTEND_DIV = <param name="SCH_DIV" index="#"/>                 
+       </isNotEqual>
+     </isNotEmpty>  
+      <isNotEmpty property="ODR">
+        order by <param name="ODR" index="#" quote="no"/>
+      </isNotEmpty>
+      <isEmpty property="ODR">
+        order by name, colreg_no, dept_nm, regst_grade
+      </isEmpty>       
+    </query>
+  </executeQuery>
+  
+  <!--  온라인 출석 출석 비율 및 출석정보 보여주기(대체출석 : 차시 없음)  -->
+  <executeQuery statementType="stmt" id="getOnlineAttendList3">
+    <query>
+       SELECT  C.KJKEY, C.ATTEND_ID AS COLREG_NO , nvl(D.COLREG_NO,C.ATTEND_ID) as COLREG_NO2
+              ,D.NAME
+              ,NVL(D.DEPT_NM,C.DEPT_NM) as DEPT_NM
+              ,CASE WHEN NVL(D.REGST_GRADE,C.LESSN_GRAD) <![CDATA[ < ]]> '4' THEN '4' ELSE  NVL(D.REGST_GRADE,C.LESSN_GRAD) END  as REGST_GRADE
+              ,D.GUBUN 
+              ,C.STU_GUBUN 
+              ,C.ATT_ORDR  
+              ,e.PHOTO_DIR_ID  AS PHOTO_DIR_ID
+              ,e.PHOTO_EXT  AS PHOTO_EXT   
+              ,c.div_1 
+              ,c.div_2
+              ,c.div_3
+              ,c.div_4     
+              ,C.ATTEND_ID
+              ,C.ATTEND_ID AS USER_ID
+              ,0 AS ATTEND_RT
+              ,0 AS EX_ATTEND_RT
+              ,NULL AS ATTEND_DIV
+              ,NULL AS ABS_RSN_CD
+              ,NULL AS ABS_RSN_NOTE
+              ,NULL AS ABS_RSN_NM
+         FROM 
+            (
+               select  B.KJKEY
+                      ,B.ATTEND_ID AS ATTEND_ID  
+                      ,MIN(B.LESSN_GRAD) AS LESSN_GRAD
+                      ,MIN(B.DEPT_NM) AS DEPT_NM
+                      ,MIN(B.STU_GUBUN)  STU_GUBUN
+                      ,MIN(B.ATT_ORDR)  AS ATT_ORDR                        
+                      ,SUM(case when A.ATTEND_DIV = '1' then A.ATTEND_CNT else 0 end) div_1
+                      ,SUM(case when A.attend_div = '2' then A.ATTEND_CNT else 0 end) div_2
+                      ,SUM(case when A.attend_div = '3' then A.ATTEND_CNT else 0 end) div_3
+                      ,SUM(case when C.CNT > 0 AND A.attend_div is null then 1 else 0 end) div_4
+                from 
+                     (
+                      SELECT B.KJKEY, B.ATTEND_ID, B.ATTEND_DIV ,count(0) as ATTEND_CNT 
+                        FROM E1_CLASS_ATTEND_MST A,
+                             E1_CLASS_ATTEND B
+                       WHERE A.KJKEY = B.KJKEY
+                         AND A.ATTEND_NO = B.ATTEND_NO
+                         AND A.KJKEY = <param name="session.kjkey" index="#"/>
+                         AND ATTEND_MST_DIV IN ('1','2','3','4','5')
+                      GROUP BY  B.KJKEY, B.ATTEND_ID, B.ATTEND_DIV   
+                     ) A
+                    ,(
+                        SELECT B.KJKEY 
+                             , C.COLREG_NO AS ATTEND_ID,C.LESSN_GRAD, C.DEPT_NM
+                             ,'S' AS STU_GUBUN
+                             , C.ATT_ORDR  AS ATT_ORDR                        
+                          FROM E1_CLASS_LECTURE B
+                              ,HAK_COURSE_APPLY C
+                         WHERE B.KJKEY = <param name="session.kjkey" index="#"/>
+                           AND B.ORG_SECT = C.ORG_SECT
+                           AND B.YEAR = C.LEDG_YEAR
+                           AND B.TERM = C.LEDG_SESSN
+                           AND B.LSSN_CD = C.LSSN_CD
+                           AND B.SUBJT_NO = C.SUBJT_NO
+                           AND C.RESLT_DESTR_CD = 'N'  
+                       union all
+                        SELECT a.KJKEY,a.auditor_id as ATTEND_ID
+                              ,A.GRADE lessn_grad, A.DEPT_NM
+                              ,CASE WHEN A.AUDITOR_DIV = '1' THEN 'A' ELSE 'S' END AS STU_GUBUN
+                              ,null AS ATT_ORDR                              
+                          FROM e1_class_auditor a 
+                         WHERE A.KJKEY = <param name="session.kjkey" index="#"/>
+                           and A.SU_DECISION = '2'
+                           AND A.AUDITOR_DIV = '2'                                                              
+                    ) B
+                    ,(SELECT KJKEY, COUNT(0) AS CNT 
+                        FROM E1_CLASS_ATTEND_MST
+                       WHERE KJKEY =  <param name="session.kjkey" index="#"/>
+                         AND ATTEND_MST_DIV IN ('1','2','3','4','5')
+                       GROUP BY KJKEY
+                     ) C   
+                    ,(SELECT EXCPT_ID
+                        FROM E1_CLASS_ATTEND_EXCPT
+                       WHERE KJKEY = <param name="session.kjkey" index="#"/>
+                         AND <param name="ATTEND_DT" index="#" unmask="/.-"/> BETWEEN ST_DT AND ED_DT) D               
+            where B.kjkey = A.kjkey(+)
+              and B.ATTEND_ID = A.ATTEND_ID(+)
+              and B.kjkey = c.kjkey(+)
+              and b.kjkey = <param name="session.kjkey" index="#"/>
+              AND B.ATTEND_ID = D.EXCPT_ID
+            GROUP BY B.KJKEY ,B.ATTEND_ID            
+          ) C
+          ,V_ECLASS_USER_INFO D     
+          ,E1_MYSETTING E   
+    where C.ATTEND_ID = D.USER_ID  
+      AND C.ATTEND_ID = E.USER_ID(+) 
+     <isNotEmpty property="SCH_VAL">
+       AND (    D.NAME LIKE <param name="SCH_VAL" index="#" suffix="%"/>
+             OR D.COLREG_NO = <param name="SCH_VAL"  index="#" />
+           )
+     </isNotEmpty>        
+     <isNotEmpty property="SCH_STU_GUBUN">
+       AND C.STU_GUBUN  = <param name="SCH_STU_GUBUN"/>
+     </isNotEmpty>   
+      <isNotEmpty property="ODR">
+        --order by <param name="ODR" index="#" quote="no"/>
+      </isNotEmpty>
+      <isEmpty property="ODR">
+        --order by name, colreg_no, dept_nm, regst_grade
+      </isEmpty>       
+    </query>
+  </executeQuery>
+  
+  <!-- 온라인강의 시퀀스 가져오기 -->
+  <executeQuery id="getLectureWeeks" statementType="stmt">
+    <query>
+    SELECT LECTURE_WEEKS 
+      FROM E1_LECTURE_WEEKS
+     WHERE KJKEY = <param name="session.kjkey" index="#" />
+       AND ATTEND_NO = <param name="ATTEND_NO" index="#"/>
+    </query>
+  </executeQuery>
+    
+  <!-- 출석정보 일련번호 가져오기 -->
+  <executeQuery id="getAttendNo" statementType="stmt">
+    <query>
+    SELECT NVL(MAX(ATTEND_NO),0)+1 ATTEND_NO 
+      FROM E1_CLASS_ATTEND_MST
+     WHERE KJKEY = <param name="session.kjkey" index="#" />
+    </query>
+  </executeQuery>
+  
+    <!-- 출석부에 해당 ATTEND_NO값이 있는지 없는지 확인 -->
+  <executeQuery  id="getAttendNoCnt" statementType="stmt">
+    <query>
+    SELECT KJKEY, ATTEND_NO, ATTEND_MST_DIV
+      FROM E1_CLASS_ATTEND_MST
+     WHERE KJKEY = <param name="session.kjkey"/>
+       AND ATTEND_NO = <param name="ATTEND_NO"/>
+    </query>
+  </executeQuery>
+    
+  <!-- 출석마스터상세 -->
+  <!-- 일반출석마스터 존재유무 -->
+  <executeQuery id="getAttendMstCheck"  statementType="pstmt">
+    <query>
+      SELECT A.ATTEND_NO, A.ATTEND_MST_DIV, B.LECTURE_WEEKS
+        FROM E1_CLASS_ATTEND_MST A, E1_LECTURE_WEEKS B 
+       WHERE A.KJKEY = <param name="session.kjkey" index="#"/>
+         AND A.WEEK_NO = <param name="WEEK_NO" index="#"/>
+         AND A.WEEK_TIME = <param name="WEEK_TIME" index="#"/>
+         AND A.ATTEND_MST_DIV IS NULL
+         AND A.KJKEY = B.KJKEY(+)
+         AND A.ATTEND_NO = B.ATTEND_NO(+) 
+    </query>
+  </executeQuery>   
+ 
+  <!--  휴강 출석마스터 존재 유무 -->
+  <executeQuery id="getCancelAttendMstCheck"  statementType="pstmt">
+    <query>
+      SELECT A.ATTEND_NO, A.ATTEND_MST_DIV, B.LECTURE_WEEKS
+        FROM E1_CLASS_ATTEND_MST A, E1_LECTURE_WEEKS B 
+       WHERE A.KJKEY = <param name="session.kjkey" index="#"/>
+         AND A.LECT_CANCEL_WEEK_NO = <param name="LECT_CANCEL_WEEK_NO" index="#"/>
+         AND A.LECT_CANCEL_WEEK_TIME = <param name="LECT_CANCEL_WEEK_TIME" index="#"/>
+         AND A.ATTEND_MST_DIV IS NULL
+         AND A.KJKEY = B.KJKEY(+)
+         AND A.ATTEND_NO = B.ATTEND_NO(+)     
+    </query>
+  </executeQuery>   
+      
+  <!-- 출석정보 자기자신 주차,차시정보 가져오기 -->
+  <executeQuery id="getSelfAttendMst" statementType="stmt">
+    <query>
+    SELECT A.KJKEY,A.ATTEND_NO,A.WEEK_NO,A.WEEK_TIME,A.ATTEND_DT,A.ATTEND_MST_DIV,B.LECTURE_WEEKS
+      FROM E1_CLASS_ATTEND_MST A, E1_LECTURE_WEEKS B 
+     WHERE A.KJKEY = <param name="session.kjkey" index="#" />
+       AND A.ATTEND_NO = <param name="ATTEND_NO" index="#"/>
+       AND A.KJKEY = B.KJKEY(+)
+       AND A.ATTEND_NO = B.ATTEND_NO(+)    
+    </query>
+  </executeQuery>
+  
+  <!-- 출석정보 출석대체자 존재하는지 출석부 정보를 가져오기 -->
+  <executeQuery id="getAttendMstAlter" statementType="stmt">
+    <query>
+    SELECT KJKEY,ATTEND_NO,WEEK_NO,WEEK_TIME,ATTEND_MST_DIV
+      FROM E1_CLASS_ATTEND_MST
+     WHERE KJKEY = <param name="session.kjkey" index="#" />
+       AND WEEK_NO = <param name="WEEK_NO" index="#"/>
+       AND WEEK_TIME = <param name="WEEK_TIME" index="#"/>
+    </query>
+  </executeQuery>      
+  
+  <!-- 출석정보 차시정보를 가져오기(출석 복사 사용) -->
+  <executeQuery id="getAttendWeekTimeNo" statementType="stmt">
+    <query>
+    SELECT NVL(MAX(WEEK_TIME),0)+1 WEEK_TIME 
+      FROM E1_CLASS_ATTEND_MST
+     WHERE KJKEY = <param name="session.kjkey" index="#" />
+       AND WEEK_NO = <param name="WEEK_NO" index="#"/>
+       AND ATTEND_MST_DIV IS NOT NULL
+       AND WEEK_TIME != '99'
+    </query>
+  </executeQuery>  
+  
+  <!-- 차시가 존재 하는지 판단한다.-->
+  <executeQuery id="getAttendWeekTimeCount" statementType="stmt">
+    <query>
+    SELECT count(0) as cnt 
+      FROM E1_CLASS_ATTEND_MST A
+     WHERE A.KJKEY = <param name="session.kjkey" index="#" />
+       AND A.WEEK_NO = <param name="WEEK_NO" index="#"/>
+       AND A.WEEK_TIME = <param name="WEEK_TIME" index="#" />
+       <isNotEmpty property="ATTEND_NO">
+       AND NOT EXISTS (SELECT 'X' FROM E1_CLASS_ATTEND_MST 
+                        WHERE ATTEND_NO = <param name="ATTEND_NO" index="#" />
+                          AND WEEK_NO = A.WEEK_NO
+                          AND WEEK_TIME = A.WEEK_TIME
+                          AND KJKEY = A.KJKEY)
+       </isNotEmpty>                          
+    </query>
+  </executeQuery>  
+  
+  <!-- 보강출석에 휴강일 차시가 존재 하는지 판단한다.-->
+  <executeQuery id="getAttendCancelWeekTimeCount" statementType="stmt">
+    <query>
+    SELECT count(0) as cnt 
+      FROM E1_CLASS_ATTEND_MST A
+     WHERE A.KJKEY = <param name="session.kjkey" index="#" />
+       AND A.LECT_CANCEL_WEEK_NO = <param name="LECT_CANCEL_WEEK_NO" index="#"/>
+       AND A.LECT_CANCEL_WEEK_TIME = <param name="LECT_CANCEL_WEEK_TIME" index="#" /> 
+    <isNotEmpty property="ATTEND_NO">
+       AND NOT EXISTS (SELECT 'X' 
+                         FROM E1_CLASS_ATTEND_MST
+                        WHERE KJKEY = A.KJKEY
+                          AND ATTEND_NO = A.ATTEND_NO
+                          AND ATTEND_NO =  <param name="ATTEND_NO" index="#" />  ) 
+   </isNotEmpty>                             
+    </query>
+  </executeQuery>    
+  
+  <!-- 온라인강의 수정 -->
+  <executeQuery id="updateLectureWeeks" statementType="pstmt">
+    <query>
+UPDATE E1_LECTURE_WEEKS SET
+     WEEK_NO =  <param name="WEEK_NO" index="#"  xss="all"/>   
+   , WEEK_TIME = <param name="WEEK_TIME" index="#"  xss="all"/>   
+   , UPT_ID = <param name="session.user_id" index="#"  xss="all"/>
+   , UPT_DTM = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+WHERE KJKEY = <param name="session.kjkey" index="#" />
+  AND LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#"  xss="all"/> 
+  AND ATTEND_NO = <param name="ATTEND_NO" index="#" xss="all"/>
+      </query>
+  </executeQuery>  
+  
+  <!-- 출석정보 마스터 등록 -->
+  <executeQuery id="insertClassAttendMst" statementType="pstmt">
+    <query>
+INSERT INTO E1_CLASS_ATTEND_MST
+(  KJKEY, ATTEND_NO, ATTEND_DT, WEEK_NO,  
+   WEEK_TIME, ATTEND_MST_DIV, LECT_CANCEL_WEEK_NO, LECT_CANCEL_WEEK_TIME, LECT_CANCEL_ATTEND_DT, 
+   LECT_CANCEL_RSN_CD, LECT_CANCEL_RSN_NOTE, REG_ID, REG_DTM, REG_IP,
+   UPT_ID, UPT_DTM, UPT_IP,USER_AGENT 
+)    
+VALUES
+(
+  <param name="session.kjkey" index="#" />
+, <param name="ATTEND_NO" index="#"  xss="all"/>   
+, <param name="ATTEND_DT" index="#" unmask="./"  xss="all"/>   
+, <param name="WEEK_NO" index="#"  xss="all"/> 
+, <param name="WEEK_TIME" index="#"  xss="all"/>   
+, <param name="ATTEND_MST_DIV" index="#"  xss="all"/> 
+, <param name="LECT_CANCEL_WEEK_NO" index="#"  xss="all"/> 
+, <param name="LECT_CANCEL_WEEK_TIME" index="#"  xss="all"/> 
+, <param name="LECT_CANCEL_ATTEND_DT" index="#"  xss="all"/> 
+, <param name="LECT_CANCEL_RSN_CD" index="#"  xss="all"/>  
+, <param name="LECT_CANCEL_RSN_NOTE" index="#"  xss="all"/>    
+, <param name="session.user_id" index="#"  xss="all"/>
+, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+, <param name="session.user_ip" index="#"/>
+, <param name="session.user_id" index="#"  xss="all"/>
+, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+, <param name="session.user_ip" index="#"/>
+, <param name="session.agent" index="#"/> 
+
+)
+    </query>
+  </executeQuery>  
+   
+  <!-- 출석정보 마스터 수정 -->
+  <executeQuery id="updateClassAttendMst" statementType="pstmt">
+    <query>
+UPDATE E1_CLASS_ATTEND_MST SET
+     ATTEND_DT = <param name="ATTEND_DT" index="#" unmask="./"  xss="all"/> 
+<isNotEmpty property="ATTEND_MST_DIV">
+   , ATTEND_MST_DIV = <param name="ATTEND_MST_DIV" index="#" />
+</isNotEmpty>        
+   , WEEK_NO =  <param name="WEEK_NO" index="#"  xss="all"/>   
+   , WEEK_TIME = <param name="WEEK_TIME" index="#"  xss="all"/>   
+   , LECT_CANCEL_WEEK_NO = <param name="LECT_CANCEL_WEEK_NO" index="#"  xss="all"/> 
+   , LECT_CANCEL_WEEK_TIME = <param name="LECT_CANCEL_WEEK_TIME" index="#"  xss="all"/> 
+   , LECT_CANCEL_ATTEND_DT = <param name="LECT_CANCEL_ATTEND_DT" index="#"  xss="all"/> 
+   , LECT_CANCEL_RSN_CD = <param name="LECT_CANCEL_RSN_CD" index="#"  xss="all"/>  
+   , LECT_CANCEL_RSN_NOTE = <param name="LECT_CANCEL_RSN_NOTE" index="#"  xss="all"/>    
+   , UPT_ID = <param name="session.user_id" index="#"  xss="all"/>
+   , UPT_DTM = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+   , UPT_IP = <param name="session.user_ip" index="#"/>
+   , USER_AGENT = <param name="session.agent" index="#"/> 
+WHERE KJKEY = <param name="session.kjkey" index="#" />
+  AND ATTEND_NO = <param name="ATTEND_NO" index="#"  xss="all"/> 
+    </query>
+  </executeQuery>      
+
+   <!-- 출석정보 마스터 출석구분 수정 -->
+  <executeQuery id="updateClassAttendMstDiv" statementType="pstmt">
+    <query>
+UPDATE E1_CLASS_ATTEND_MST SET
+     ATTEND_MST_DIV = <param name="ATTEND_MST_DIV" index="#" />
+   , UPT_ID = <param name="session.user_id" index="#"  xss="all"/>
+   , UPT_DTM = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+   , UPT_IP = <param name="session.user_ip" index="#"/>
+   , USER_AGENT = <param name="session.agent" index="#"/> 
+WHERE KJKEY = <param name="session.kjkey" index="#" />
+  AND ATTEND_NO = <param name="ATTEND_NO" index="#"  xss="all"/> 
+    </query>
+  </executeQuery>      
+ 
+  <!-- 출석정보 등록 -->
+  <executeQuery id="insertClassAttend" statementType="pstmt">
+    <query>
+INSERT INTO E1_CLASS_ATTEND
+(  KJKEY, ATTEND_ID, ATTEND_NO, 
+   ATTEND_DIV, ABS_RSN_CD, ABS_RSN_NOTE, REG_ID, REG_DTM, REG_IP,UPT_ID, UPT_DTM, UPT_IP,USER_AGENT, 
+   SMRT_ATTEND_IP,SMRT_ATTEND_DEVICE,SMRT_ATTEND_DTM
+<isNotEmpty property="FORCE_YN">   
+   ,FORCE_DTM
+</isNotEmpty>    
+)    
+VALUES
+(
+  <param name="session.kjkey" index="#" />
+, <param name="ATTEND_ID" index="#"  xss="all"/>   
+, <param name="ATTEND_NO" index="#"  xss="all"/> 
+, <param name="ATTEND_DIV" index="#"  xss="all"/>   
+, <param name="ABS_RSN_CD" index="#"  xss="all"/>
+, <param name="ABS_RSN_NOTE" index="#"  xss="all"/>     
+, <param name="session.user_id" index="#"  xss="all"/>
+, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+, <param name="session.user_ip" index="#"/>
+, <param name="session.user_id" index="#"  xss="all"/>
+, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+,<param name="session.user_ip" index="#"/>
+, <param name="session.agent" index="#"/> 
+, <param name="SMRT_ATTEND_IP" index="#"/> 
+, <param name="SMRT_ATTEND_DEVICE" index="#"/> 
+, <param name="SMRT_ATTEND_DTM" index="#"/>  
+<isNotEmpty property="FORCE_YN">
+, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+</isNotEmpty>  
+)
+    </query>
+  </executeQuery>
+  
+  <!-- 출석정보 수정 -->
+  <executeQuery id="updateClassAttend" statementType="pstmt">
+    <query>
+UPDATE E1_CLASS_ATTEND SET ATTEND_DIV = <param name="ATTEND_DIV" index="#"  xss="all"/> 
+                        <isNotEmpty property="FORCE_YN">
+                        , FORCE_DTM =  TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+                        </isNotEmpty> 
+                        <isEmpty property="FORCE_YN">
+                        , FORCE_DTM =  null
+                        </isEmpty>                             
+                        <isNotEmpty property="ABS_RSN_CD">
+                          , ABS_RSN_CD = <param name="ABS_RSN_CD" index="#"  xss="all"/>
+                          , ABS_RSN_NOTE = <param name="ABS_RSN_NOTE" index="#"  xss="all"/> 
+                        </isNotEmpty>  
+                          , UPT_ID = <param name="session.user_id" index="#"  xss="all"/>
+                          , UPT_DTM = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+                          , UPT_IP = <param name="session.user_ip" index="#"  xss="all"/>
+                          , USER_AGENT = <param name="session.agent" index="#"/> 
+WHERE KJKEY  = <param name="session.kjkey" index="#" />
+  AND ATTEND_NO = <param name="ATTEND_NO" index="#"  xss="all"/> 
+  AND ATTEND_ID =  <param name="ATTEND_ID" index="#"  xss="all"/>                             
+    </query>
+  </executeQuery> 
+ 
+  <!-- 출석정보 수정 -->
+  <executeQuery id="updateClassAttendRsn" statementType="pstmt">
+    <query>
+UPDATE E1_CLASS_ATTEND SET  ABS_RSN_CD = <param name="ABS_RSN_CD" index="#"  xss="all"/>  
+                          , ABS_RSN_NOTE  = <param name="ABS_RSN_NOTE " index="#"  xss="all"/>   
+                          , UPT_ID = <param name="session.user_id" index="#"  xss="all"/>
+                          , UPT_DTM = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+                          , UPT_IP = <param name="session.user_ip" index="#"  xss="all"/>
+                          , USER_AGENT = <param name="session.agent" index="#"/> 
+WHERE KJKEY  = <param name="session.kjkey" index="#" />
+  AND ATTEND_NO = <param name="ATTEND_NO" index="#"  xss="all"/> 
+  AND ATTEND_ID =  <param name="ATTEND_ID" index="#"  xss="all"/>                             
+    </query>
+  </executeQuery>  
+  
+   <!-- 출석주차 출석대상자 복사 -->
+  <executeQuery id="getTargetAttend" statementType="stmt">
+    <query>     
+           SELECT A.KJKEY
+                 ,A.ATTEND_NO
+                 ,A.ATTEND_ID
+                 ,A.ATTEND_DIV
+                 ,B.ATTEND_DIV AS ATTEND_DIV2
+                 ,CASE WHEN B.ATTEND_DIV = '1' THEN
+                            CASE WHEN A.ATTEND_DIV IN ('2','3')  THEN B.ATTEND_DIV ELSE B.ATTEND_DIV  END
+                       WHEN B.ATTEND_DIV = '2' THEN
+                            CASE WHEN A.ATTEND_DIV IN ( '1', '3')  THEN A.ATTEND_DIV ELSE B.ATTEND_DIV END
+                       WHEN B.ATTEND_DIV = '3' THEN
+                            CASE WHEN A.ATTEND_DIV = '1' THEN A.ATTEND_DIV ELSE B.ATTEND_DIV END
+                       ELSE A.ATTEND_DIV  END ATTEND_DIV3
+                 ,CASE WHEN B.KJKEY IS NULL THEN 'I' ELSE 'U' END AS IU_MD      
+            FROM (
+            SELECT A.KJKEY
+                ,<param name="ATTEND_NO" index="#"  xss="all"/>   ATTEND_NO
+                ,A.ATTEND_ID
+                ,B.ATTEND_DIV                  
+          FROM (
+                  SELECT   A.KJKEY
+                         , A.ATTEND_NO
+                         , A.WEEK_NO
+                         , A.WEEK_TIME
+                         , A.ATTEND_DT
+                         , A.ATTEND_MST_DIV
+                         , A.LECT_CANCEL_WEEK_NO
+                         , A.LECT_CANCEL_WEEK_TIME
+                         , A.LECT_CANCEL_ATTEND_DT                         
+                         , B.COLREG_NO AS ATTEND_ID ,B.LESSN_GRAD, B.DEPT_NM
+                         ,'S' AS STU_GUBUN
+                         ,B.ATT_ORDR  AS ATT_ORDR
+                    FROM 
+                          E1_CLASS_ATTEND_MST A
+                         ,(SELECT A.KJKEY, B.COLREG_NO,B.LESSN_GRAD, B.DEPT_NM, B.ATT_ORDR 
+                            FROM E1_CLASS_LECTURE A , HAK_COURSE_APPLY B
+                           WHERE  A.YEAR = B.LEDG_YEAR
+                             AND A.TERM = B.LEDG_SESSN
+                             AND A.LSSN_CD = B.LSSN_CD 
+                             AND A.SUBJT_NO = B.SUBJT_NO
+                             AND A.ORG_SECT = B.ORG_SECT
+                             AND B.RESLT_DESTR_CD = 'N' 
+                             AND A.KJKEY = <param name="session.kjkey" index="#" />
+                          ) B 
+                   WHERE A.KJKEY = B.KJKEY
+                     AND A.KJKEY = <param name="session.kjkey" index="#" />
+                     AND A.ATTEND_NO = <param name="TRGT_ATTEND_NO" index="#"  xss="all"/> 
+                     AND A.ATTEND_MST_DIV IN ('1','2','3','4','5')
+                  UNION ALL
+                  SELECT   A.KJKEY
+                          ,A.ATTEND_NO
+                         , A.WEEK_NO
+                         , A.WEEK_TIME
+                         , A.ATTEND_DT
+                         , A.ATTEND_MST_DIV
+                         , A.LECT_CANCEL_WEEK_NO
+                         , A.LECT_CANCEL_WEEK_TIME
+                         , A.LECT_CANCEL_ATTEND_DT                            
+                          ,B.AUDITOR_ID AS ATTEND_ID ,B.GRADE lessn_grad, B.DEPT_NM
+                          ,CASE WHEN B.AUDITOR_DIV = '1' THEN 'A' ELSE 'S' END AS STU_GUBUN
+                          ,null AS ATT_ORDR
+                    from  E1_CLASS_ATTEND_MST A 
+                         ,E1_CLASS_AUDITOR B  
+                   WHERE A.KJKEY = B.KJKEY
+                     AND A.KJKEY = <param name="session.kjkey" index="#" />
+                     AND A.ATTEND_NO = <param name="ATTEND_NO" index="#"  xss="all"/> 
+                     AND A.ATTEND_MST_DIV IN ('1','2','3','4','5') 
+                     AND B.SU_DECISION = '2'
+                     AND B.AUDITOR_DIV = '2' 
+                 ) A
+                 ,E1_CLASS_ATTEND B  
+           WHERE A.KJKEY = B.KJKEY(+)
+             AND A.ATTEND_NO = B.ATTEND_NO(+)
+             AND A.ATTEND_ID = B.ATTEND_ID(+) 
+             ) A, E1_CLASS_ATTEND B
+           WHERE A.KJKEY = B.KJKEY(+)
+             AND A.ATTEND_NO = B.ATTEND_NO(+)
+             AND A.ATTEND_ID = B.ATTEND_ID(+)
+   </query>
+ </executeQuery>    
+ 
+ <!-- 출석 마스터 초기값으로 설정 (대체출석)-->
+  <executeQuery id="updateAttendMstDef" statementType="stmt">
+    <query>  
+    UPDATE E1_CLASS_ATTEND_MST
+       SET ATTEND_MST_DIV = NULL
+     WHERE KJKEY = <param name="session.kjkey" index="#" />
+       AND ATTEND_NO = <param name="ATTEND_NO" index="#" /> 
+    </query>
+  </executeQuery>      
+  
+  <!-- 출석 마스터삭제-->
+  <executeQuery id="deleteAttendMst" statementType="stmt">
+    <query>  
+    DELETE FROM E1_CLASS_ATTEND_MST A
+     WHERE A.KJKEY = <param name="session.kjkey" index="#" />
+       AND A.ATTEND_NO = <param name="ATTEND_NO" index="#" /> 
+    </query>
+  </executeQuery>   
+    
+  <!-- 출석 삭제-->
+  <executeQuery id="deleteAttend" statementType="stmt">
+    <query>  
+    DELETE FROM E1_CLASS_ATTEND A
+     WHERE A.KJKEY = <param name="session.kjkey" index="#" />
+       AND A.ATTEND_NO = <param name="ATTEND_NO" index="#" /> 
+    </query>
+  </executeQuery>    
+  
+
+  <!-- 휴강 차시조회-->
+  <executeQuery id="getAttendCancelLectureList"  statementType="pstmt">
+    <query>
+ SELECT A.KJKEY,
+        A.ATTEND_NO,
+        A.WEEK_NO,
+        A.WEEK_TIME,
+        A.ATTEND_MST_DIV,
+        A.ATTEND_DT,
+        A.LECT_CANCEL_RSN_CD,
+        A.LECT_CANCEL_RSN_NOTE,
+        B.ETC_REG_YN,
+        B.RSN_NM AS LECT_CANCEL_RSN_NM,
+        C.ATTEND_NO AS SUPPLY_ATTEND_NO,
+        C.ATTEND_DT AS SUPPLY_ATTEND_DT,
+        C.ATTEND_MST_DIV AS SUPPLY_ATTEND_MST_DIV, 
+        CASE WHEN <param name="ATTEND_NO" index="#"/> IS NOT NULL 
+             THEN CASE WHEN  <param name="ATTEND_NO" index="#"/>  = C.ATTEND_NO OR C.ATTEND_NO IS NULL THEN '0' ELSE '1' END
+             ELSE CASE WHEN C.ATTEND_NO IS NULL OR C.ATTEND_MST_DIV IS NULL THEN '0' ELSE '1' END  END SUPPLY_LECT_CNT               
+FROM E1_CLASS_ATTEND_MST A, E1_LECT_CANCEL_RSN_CODE B
+   ,(
+       SELECT X.KJKEY, X.ATTEND_MST_DIV, X.ATTEND_NO, X.ATTEND_DT,X.LECT_CANCEL_WEEK_NO,X.LECT_CANCEL_WEEK_TIME
+         FROM E1_CLASS_ATTEND_MST X
+        WHERE X.KJKEY =  <param name="session.kjkey" index="#" /> 
+    ) C
+WHERE A.KJKEY =  <param name="session.kjkey" index="#" />
+  AND A.ATTEND_MST_DIV = '6'
+  AND A.LECT_CANCEL_RSN_CD = B.RSN_CD(+)
+  AND A.KJKEY = C.KJKEY(+)
+  AND A.WEEK_NO  = C.LECT_CANCEL_WEEK_NO (+)
+  AND A.WEEK_TIME = C.LECT_CANCEL_WEEK_TIME (+)  
+ORDER BY A.WEEK_NO asc, A.WEEK_TIME asc  
+    </query>
+  </executeQuery>       
+  
+  <!-- 출석 휴강일 상세조회 -->
+  <executeQuery id="getAttendCancelLectureView"  statementType="pstmt">
+    <query>
+ SELECT A.KJKEY,
+        A.ATTEND_NO,
+        A.WEEK_NO,
+        A.WEEK_TIME,
+        A.ATTEND_MST_DIV,
+        A.ATTEND_DT,
+        A.LECT_CANCEL_RSN_CD,
+        A.LECT_CANCEL_RSN_NOTE,
+        B.RSN_NM AS LECT_CANCEL_RSN_NM,
+        B.ETC_REG_YN AS ETC_REG_YN
+FROM E1_CLASS_ATTEND_MST A, E1_LECT_CANCEL_RSN_CODE B
+WHERE A.KJKEY =  <param name="session.kjkey" index="#" />
+  AND A.ATTEND_NO = <param name="ATTEND_NO" index="#" xss="all"/>
+  AND A.ATTEND_MST_DIV = '6'
+  AND A.LECT_CANCEL_RSN_CD = B.RSN_CD(+) 
+    </query>
+  </executeQuery>    
+  
+  <!-- 출석  건수 조회 -->
+  <executeQuery id="getAttendMst"  statementType="pstmt">
+    <query>
+ SELECT count(0) as cnt
+   FROM E1_CLASS_ATTEND_MST A 
+  WHERE A.KJKEY =  <param name="session.kjkey" index="#" />
+    AND A.ATTEND_NO = <param name="ATTEND_NO" index="#" xss="all"/>
+    </query>
+  </executeQuery>      
+      
+  <!--   공결사유코드-->
+  <executeQuery id="getAbsRsnCdList"  statementType="pstmt">
+    <query>
+SELECT RSN_CD, RSN_NM, ETC_REG_YN, USE_YN, ODR 
+  FROM E1_ABS_RSN_CODE
+ WHERE USE_YN ='Y' 
+ORDER BY ODR 
+    </query>
+  </executeQuery> 
+    
+  <!--  휴강사유코드-->
+  <executeQuery id="getLectCancelRsnCdList"  statementType="pstmt">
+    <query>
+SELECT RSN_CD, RSN_NM, ETC_REG_YN, ODR 
+  FROM E1_LECT_CANCEL_RSN_CODE
+ WHERE USE_YN ='Y'
+ ORDER BY ODR
+    </query>
+  </executeQuery> 
+        
+   <!-- 출석 마스터 구분-->
+  <executeQuery id="getAttendMstDiv"  statementType="pstmt">
+    <query>
+SELECT  A.ATTEND_MST_DIV   
+FROM E1_CLASS_ATTEND_MST A 
+WHERE A.KJKEY =  <param name="session.kjkey" index="#" />
+  AND A.ATTEND_NO = <param name="ATTEND_NO" index="#" xss="all"/>
+    </query>
+  </executeQuery>   
+  
+  
+  <!-- 스마트 출석 START -->
+    <!-- 스마트출석정보  등록 -->
+  <executeQuery id="insertClassSmartAttend" statementType="pstmt">
+    <query>
+INSERT INTO E1_CLASS_ATTEND
+(  
+   KJKEY,
+   ATTEND_ID, 
+   ATTEND_NO, 
+   ATTEND_DIV, 
+   REG_ID, 
+   REG_DTM,
+   REG_IP,
+   UPT_ID, 
+   UPT_DTM,
+   UPT_IP, 
+   USER_AGENT 
+)
+select  <param name="session.kjkey"  index="#"/> as KJKEY, 
+      B.ATTEND_ID,
+      <param name="ATTEND_NO"   index="#"/> as ATTEND_NO,
+      <param name="ATTEND_DIV"   index="#"/> as ATTEND_DIV,
+      <param name="session.user_id" index="#"  xss="all"/> REG_ID,
+      TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS') as REG_DTM,
+      <param name="session.user_ip" index="#"  xss="all"/> REG_IP,
+      <param name="session.user_id" index="#"  xss="all"/> UPT_ID,
+      TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS') as UPT_DTM,
+      <param name="session.user_ip" index="#"  xss="all"/> UPT_IP,      
+      <param name="session.agent" index="#"/> as USER_AGENT 
+  from  (
+          select B.COLREG_NO AS ATTEND_ID
+            from HAK_COURSE_APPLY B, e1_class_lecture c
+           where B.RESLT_DESTR_CD = 'N' 
+             AND B.LEDG_YEAR = C.YEAR
+             AND B.LEDG_SESSN = C.TERM
+             AND B.ORG_SECT = C.ORG_SECT
+             AND B.LSSN_CD = C.LSSN_CD
+             AND B.SUBJT_NO = C.SUBJT_NO
+             and c.kjkey = <param name="session.kjkey" index="#" /> 
+          UNION ALL
+           select B.AUDITOR_ID AS ATTEND_ID 
+             from e1_class_auditor B
+            where B.kjkey = <param name="session.kjkey" index="#" />
+              AND B.SU_DECISION = '2'
+              AND B.AUDITOR_DIV = '2'
+       ) B      
+
+    </query>
+  </executeQuery>  
+  
+  <!-- 스마트 출석마스터 갱신 -->
+  <executeQuery statementType="stmt" id="updateClassSmartAttend">
+    <query>
+UPDATE e1_class_attend SET 
+        ATTEND_DIV =  <param name="ATTEND_DIV" index="#"/>  
+      , SMRT_ATTEND_IP  =  <param name="SMRT_ATTEND_IP" index="#" />
+      , SMRT_ATTEND_DEVICE = <param name="SMRT_ATTEND_DEVICE" index="#" />
+      , SMRT_ATTEND_DTM = <param name="SMRT_ATTEND_DTM" index="#" />
+ WHERE kjkey =  <param name="session.kjkey" index="#"/>
+   and attend_no =<param name="ATTEND_NO" index="#"/>   
+   and attend_id = <param name="ATTEND_ID" index="#"/>  
+
+    </query>
+  </executeQuery> 
+  
+  
+  <!-- 온라인 강의 주차 정보 보기 -->
+       <!-- 강의 주차 상세 조회-->
+  <executeQuery id="getLectureWeekView"  statementType="stmt">
+    <query>
+SELECT  A.KJKEY, A.LECTURE_WEEKS, A.LECTURE_WEEKS_TITLE
+      , A.LECTURE_SDT, A.LECTURE_EDT, A.LECTURE_TYPE
+      , A.WEEK_NO
+      , A.WEEK_TIME
+      , A.ATTEND_BS  
+      , A.ATTEND_MIN_TM
+      , CASE WHEN ATTEND_BS = '1' THEN '00000000000000'
+             WHEN ATTEND_BS = '2' THEN LECTURE_SDT||'00' 
+             WHEN ATTEND_BS = '3' THEN '00000000000000' 
+             ELSE LECTURE_SDT||'00'  end AS  MIN_LECTURE_SDT    
+      , CASE WHEN ATTEND_BS = '1' THEN '99991231235959'
+             WHEN ATTEND_BS = '2' THEN LECTURE_EDT||'59' 
+             WHEN ATTEND_BS = '3' THEN LECTURE_EDT||'59' 
+             ELSE LECTURE_EDT||'59'  end AS MAX_LECTURE_EDT
+      , a.concurrent_save_id
+      , C.LECT_CANCEL_WEEK_NO
+      , C.LECT_CANCEL_WEEK_TIME
+      , C.LECT_CANCEL_ATTEND_DT
+FROM E1_LECTURE_WEEKS A
+    ,E1_CLASS_LECTURE B
+    ,E1_CLASS_ATTEND_MST C
+WHERE A.KJKEY = B.KJKEY
+  AND A.KJKEY = C.KJKEY
+  AND A.KJKEY = <param name="session.kjkey" index="#" /> 
+  AND A.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#"/>
+  AND A.ATTEND_NO = C.ATTEND_NO
+      
+    </query>
+  </executeQuery>  
+  
+  <!--  출석 대상자 정보 -->
+  <executeQuery id="getAttendUserInfoView" statementType="stmt" >
+    <query>
+       SELECT  A.NAME
+              ,A.DEPT_NM
+              ,A.REGST_GRADE
+              ,A.GUBUN 
+              ,A.USER_ID
+         FROM V_ECLASS_USER_INFO A 
+        WHERE A.USER_ID  = <param name="USER_ID" index="#"/>
+    </query>
+  </executeQuery>  
+  
+  <!--  출석 대상 이력 조회 -->
+  <executeQuery id="getAttendUserContentList" statementType="stmt" >
+    <query>
+       SELECT A.USER_ID, A.KJKEY,A.LECTURE_WEEKS, A.LINK_SEQ ,A.HIS_NO
+             ,NVL(TRUNC(ROUND( ((TO_DATE(A.EDU_ED_DTM,'YYYYMMDDHH24MISS')-TO_DATE(A.EDU_ST_DTM,'YYYYMMDDHH24MISS')) )*24*60*60)),0) AS EDU_MIN
+             ,A.EDU_ST_DTM, A.EDU_ED_DTM,A.CONNT_TYPE
+             ,(SELECT ITEM_TITLE FROM E1_ITEMS WHERE ITEM_ID = B.PC_ITEM_ID) AS PC_ITEM_TITLE
+             ,(SELECT ITEM_TITLE FROM E1_ITEMS WHERE ITEM_ID = B.MOBILE_ITEM_ID) AS MOBILE_ITEM_TITLE
+             ,CASE WHEN A.EDU_ED_DTM IS NULL THEN '0' ELSE '1' END STATUS 
+             ,A.CONT_IP
+         FROM E1_WEEKS_ATTEND A,E1_CONTENTS_LINK B  
+        WHERE A.USER_ID  = <param name="USER_ID" index="#"/>
+          AND A.KJKEY =  <param name="session.kjkey" index="#"/>
+          AND A.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#"/>
+          AND A.KJKEY = B.KJKEY
+          AND A.LINK_SEQ = B.LINK_SEQ
+          AND A.LECTURE_WEEKS = B.LECTURE_WEEKS
+          <isNotEmpty property="LINK_SEQ">
+          AND A.LINK_SEQ IN ('<param name="LINK_SEQ" index="#" quote="no"/>')
+          </isNotEmpty>
+        ORDER BY A.EDU_ST_DTM DESC, A.LINK_SEQ
+    </query>
+  </executeQuery>
+  
+  <!-- 출석 차시 상세 이력 정보 조회 -->
+  <!--  출석 대상 이력시간 조회 -->
+  <executeQuery id="getAttendUserContentTimeList" statementType="stmt" >
+    <query>
+SELECT  A.USER_ID, A.KJKEY, A.LECTURE_WEEKS, A.LINK_SEQ, A.ATTEND_MIN_TM, A.PC_ITEM_TITLE, A.MOBILE_ITEM_TITLE, A.ODR
+       ,SUM(A.EDU_MIN)  AS ATTEND_TM
+       ,SUM(A.EX_EDU_MIN)  AS EX_ATTEND_TM 
+  FROM(
+SELECT A.USER_ID,b.KJKEY,b.LECTURE_WEEKS,b.LINK_SEQ,b.ODR
+       ,case when A.EDU_ST_DTM  <![CDATA[ <  ]]> C.MAX_LECTURE_EDT then 
+                  TRUNC(ROUND( ((TO_DATE(A.EDU_ED_DTM,'YYYYMMDDHH24MISS')-TO_DATE(A.EDU_ST_DTM,'YYYYMMDDHH24MISS')) )*24*60*60))
+                  else null end AS EDU_MIN
+       ,case when A.EDU_ST_DTM >= C.MAX_LECTURE_EDT AND A.EDU_ST_DTM <![CDATA[ <= ]]> C.LAST_LECTURE_EDT THEN 
+                  TRUNC(ROUND( ((TO_DATE(A.EDU_ED_DTM,'YYYYMMDDHH24MISS')-TO_DATE(A.EDU_ST_DTM,'YYYYMMDDHH24MISS')) )*24*60*60))
+                  else null end AS EX_EDU_MIN   
+     ,(SELECT ITEM_TITLE FROM E1_ITEMS WHERE ITEM_ID = B.PC_ITEM_ID) AS PC_ITEM_TITLE
+     ,(SELECT ITEM_TITLE FROM E1_ITEMS WHERE ITEM_ID = B.MOBILE_ITEM_ID) AS MOBILE_ITEM_TITLE
+     ,(NVL(B.ATTEND_MIN_TM,0)*60)+NVL(B.ATTEND_SEC_TM,0) AS ATTEND_MIN_TM
+FROM E1_WEEKS_ATTEND A,E1_CONTENTS_LINK B,
+     (
+       SELECT a.KJKEY,a.LECTURE_WEEKS
+         ,CASE WHEN ATTEND_BS = '1' THEN '00000000000000'
+               WHEN ATTEND_BS = '2' THEN LECTURE_SDT||'00'
+               WHEN ATTEND_BS = '3' THEN '00000000000000'
+               ELSE LECTURE_SDT||'00' end AS MIN_LECTURE_SDT
+         ,CASE WHEN ATTEND_BS = '1' THEN '99991231235959'
+               WHEN ATTEND_BS = '2' THEN LECTURE_EDT||'59'
+               WHEN ATTEND_BS = '3' THEN LECTURE_EDT||'59'
+               ELSE LECTURE_EDT||'59' end AS MAX_LECTURE_EDT
+         ,F_LATE_MAX_ALLOW_DT(A.KJKEY) AS LAST_LECTURE_EDT
+         FROM E1_LECTURE_WEEKS A
+        WHERE a.KJKEY = <param name="session.kjkey" index="#"/>
+          AND A.LECTURE_WEEKS =  <param name="LECTURE_WEEKS" index="#"/>
+     ) C
+WHERE A.USER_ID(+) = <param name="USER_ID" index="#"/>
+AND A.KJKEY(+) = <param name="session.kjkey" index="#"/>
+AND A.LECTURE_WEEKS(+) =  <param name="LECTURE_WEEKS" index="#"/>
+AND A.KJKEY(+) = B.KJKEY
+AND A.LINK_SEQ(+) = B.LINK_SEQ
+AND A.LECTURE_WEEKS(+) = B.LECTURE_WEEKS
+AND B.KJKEY = C.KJKEY
+AND B.LECTURE_WEEKS = C.LECTURE_WEEKS
+) A
+GROUP BY A.USER_ID, A.KJKEY, A.LECTURE_WEEKS, A.LINK_SEQ, A.ATTEND_MIN_TM, A.PC_ITEM_TITLE, A.MOBILE_ITEM_TITLE, A.ODR
+ORDER BY A.ODR           
+     </query>
+  </executeQuery> 
+  
+  <!-- 이러닝온라인 시간 강제 추가  -->
+  <executeQuery id="updateStuAttendTmForce"  statementType="stmt">
+    <query>
+insert into E1_WEEKS_ATTEND ( 
+ USER_ID
+,KJKEY
+,LECTURE_WEEKS
+,LINK_SEQ
+,HIS_NO
+,CONNT_TYPE
+,CONT_IP
+,EDU_ST_DTM
+,EDU_ED_DTM
+,FORCE_DTM
+ )
+select  <param name="USER_ID" index="#" />
+      , <param name="session.kjkey" index="#" />
+      , <param name="LECTURE_WEEKS" index="#" />
+      , <param name="LINK_SEQ" index="#" />
+      ,(SELECT NVL(MAX(HIS_NO),0)+1 as max_his_no FROM E1_WEEKS_ATTEND 
+          WHERE USER_ID = <param name="USER_ID" index="#" /> 
+            AND KJKEY = <param name="session.kjkey" index="#" /> 
+            AND LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#" />)
+      ,'F' --강제등록
+      ,<param name="session.user_ip" index="#"/>
+      ,(select to_char(to_date(a.LECTURE_EDT, 'yyyymmddhh24miss') - ((NVL(c.ATTEND_MIN_TM,0)*60+NVL(c.ATTEND_SEC_TM,0)) - nvl(sum(TRUNC(ROUND(MOD((TO_DATE(b.EDU_ED_DTM,'YYYYMMDDHH24MISS')-TO_DATE(b.EDU_ST_DTM,'YYYYMMDDHH24MISS')),1)*24*60*60))), 0))/(24*60*60), 'yyyymmddhh24miss')
+        from (
+          select case when b.EDU_ST_DTM <![CDATA[<]]> bb.LECTURE_SDT||'00' then bb.LECTURE_SDT||'00'  else b.EDU_ST_DTM end as edu_st_dtm
+                ,case when b.EDU_ED_DTM <![CDATA[>]]> bb.LECTURE_EDT||'59' then bb.LECTURE_EDT||'59'  else b.EDU_ED_DTM end as edu_ed_dtm
+           from e1_weeks_attend b, e1_lecture_weeks bb 
+           where user_id = <param name="USER_ID" index="#" />
+             and b.kjkey=<param name="session.kjkey" index="#" />
+             and b.lecture_weeks = <param name="LECTURE_WEEKS" index="#" />
+             and b.kjkey = bb.kjkey
+             and b.lecture_weeks = bb.lecture_weeks
+             and link_seq = <param name="LINK_SEQ" index="#" />
+             AND EDU_ST_DTM IS NOT NULL
+             AND EDU_ED_DTM IS NOT NULL
+             AND (EDU_ST_DTM between LECTURE_SDT||'00' and LECTURE_EDT||'59'
+               or EDU_ED_DTM between LECTURE_SDT||'00' and LECTURE_EDT||'59')
+             ) b) 
+       ,CASE WHEN c.ATTEND_MIN_TM = '0' AND c.ATTEND_SEC_TM = '0' THEN a.LECTURE_EDT||'01' ELSE a.LECTURE_EDT||'00' END 
+       ,to_char(sysdate, 'yyyymmddhh24miss')
+   from e1_lecture_weeks a, e1_contents_link c
+WHERE a.KJKEY =  <param name="session.kjkey" index="#" /> 
+   AND a.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#" />
+   and a.kjkey = c.kjkey
+   and a.lecture_weeks = c.lecture_weeks
+   and c.link_seq = <param name="LINK_SEQ" index="#" />
+    </query>
+  </executeQuery>
+  
+  <!-- 이러닝온라인 시간 강제 삭제  -->
+  <executeQuery id="deleteStuAttendTmForce"  statementType="stmt">
+    <query>
+DELETE E1_WEEKS_ATTEND
+ WHERE USER_ID = <param name="USER_ID" index="#" />
+   AND KJKEY = <param name="session.kjkey" index="#"/>
+   AND LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#" />
+   AND LINK_SEQ = <param name="LINK_SEQ" index="#"/>
+   AND HIS_NO = <param name="HIS_NO" index="#"/>  
+    </query>
+  </executeQuery>
+   
+ 
+
+ <!-- 강제 출석 출서 마스터를 조회한다. -->
+  <executeQuery id="getAttendMstUserView" statementType="stmt" >
+    <query>
+SELECT A.KJKEY, B.LECTURE_WEEKS, B.ATTEND_NO, B.ATTEND_MST_DIV, C.ATTEND_ID, C.ATTEND_DIV, D.FORCE_DTM 
+ FROM E1_LECTURE_WEEKS A, E1_CLASS_ATTEND_MST B, E1_CLASS_ATTEND C
+ WHERE A.KJKEY =  <param name="session.kjkey" index="#" />
+   AND A.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#" />
+   AND A.KJKEY = B.KJKEY
+   AND A.ATTEND_NO = B.ATTEND_NO
+   AND B.KJKEY = C.KJKEY(+)
+   AND B.ATTEND_NO = C.ATTEND_NO(+)
+   AND <param name="USER_ID" index="#" /> = C.ATTEND_ID(+)  
+    </query>
+  </executeQuery> 
+     
+  
+  <!-- 온라인 출석 체크 조회 -->
+  <executeQuery statementType="stmt" id="getOnlineAttendCheckView">
+    <query>
+              SELECT A.KJKEY, A.USER_ID,A.LECTURE_WEEKS, B.ATTEND_NO,
+                   CASE WHEN A.ATTEND_RT >= C.TERM_ATTEND_RATE THEN '1'
+                        WHEN A.ATTEND_RT >= C.TERM_LATE_RATE AND A.ATTEND_RT <![CDATA[ <= ]]> C.TERM_ATTEND_RATE THEN '3' 
+                        WHEN (A.ATTEND_RT+A.EX_ATTEND_RT) >= C.TERM_EX_LATE_RT THEN '3'
+                        ELSE '2'
+                    END ONLINE_ATTEND_DIV
+                  ,A.ATTEND_RT       
+                  ,A.EX_ATTEND_RT 
+                  ,C.TERM_LATE_RATE
+            FROM (
+                     SELECT A.KJKEY,A.USER_ID,A.LECTURE_WEEKS
+                           ,SUM(EX_ATTEND_TM) AS TOTAL_EX_ATTEND_TM
+                           ,CASE WHEN SUM(ATTEND_MIN_TM) = 0 THEN CASE WHEN SUM(ORG_ATTEND_TM) > 0 THEN 100 ELSE 0 END
+                                                             ELSE TRUNC(SUM(ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100) END AS ATTEND_RT
+                           ,CASE WHEN SUM(ATTEND_MIN_TM) = 0 THEN CASE WHEN SUM(ORG_EX_ATTEND_TM) > 0 THEN 100 ELSE 0 END
+                                                             ELSE   TRUNC(SUM(EX_ATTEND_TM+ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100 )  -  TRUNC( SUM(ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100 ) END AS EX_ATTEND_RT
+                           ,SUM(ORG_ATTEND_TM) AS ORG_ATTEND_TM
+                           ,SUM(ORG_EX_ATTEND_TM) AS ORG_EX_ATTEND_TM 
+                      FROM (
+                              SELECT A.KJKEY,A.USER_ID,A.LECTURE_WEEKS
+                                    ,A.ATTEND_TM
+                                    ,CASE WHEN NVL(A.ATTEND_MIN_TM,0) - NVL(A.ATTEND_TM,0)  >  NVL(A.EX_ATTEND_TM,0)  
+                                          THEN NVL(A.EX_ATTEND_TM,0)  ELSE   NVL(A.ATTEND_MIN_TM,0)- NVL(A.ATTEND_TM,0)  END EX_ATTEND_TM
+                                    ,NVL(A.ATTEND_MIN_TM ,0) AS ATTEND_MIN_TM
+                                    ,NVL(A.ORG_ATTEND_TM,0) AS ORG_ATTEND_TM
+                                    ,NVL(A.EX_ATTEND_TM,0) AS ORG_EX_ATTEND_TM
+                              FROM  (
+                                      SELECT B.USER_ID,B.KJKEY,B.LECTURE_WEEKS,B.LINK_SEQ
+                                            ,B.ATTEND_MIN_TM   AS ATTEND_MIN_TM
+                                            ,CASE WHEN NVL(A.ATTEND_TM,0) > NVL(B.ATTEND_MIN_TM,0) THEN NVL(B.ATTEND_MIN_TM,0) ELSE NVL(A.ATTEND_TM,0) END AS ATTEND_TM
+                                            ,A.ATTEND_TM    AS ORG_ATTEND_TM
+                                            ,A.EX_ATTEND_TM AS EX_ATTEND_TM
+                                        FROM (
+                                               SELECT A.USER_ID,A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ
+                                                     ,SUM(A.EDU_MIN)  AS ATTEND_TM
+                                                     ,SUM(A.EX_EDU_MIN)  AS EX_ATTEND_TM
+                                                 FROM (
+                                                         SELECT A.USER_ID,A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ
+                                                               ,case when A.EDU_ST_DTM <![CDATA[ < ]]>  B.MAX_LECTURE_EDT then 
+                                                                          TRUNC(ROUND( ((TO_DATE(A.EDU_ED_DTM,'YYYYMMDDHH24MISS')-TO_DATE(A.EDU_ST_DTM,'YYYYMMDDHH24MISS')) )*24*60*60))
+                                                                     else null end AS EDU_MIN
+                                                               ,case when A.EDU_ST_DTM >=  B.MAX_LECTURE_EDT AND A.EDU_ST_DTM <![CDATA[ <= ]]>  B.LAST_LECTURE_EDT THEN 
+                                                                          TRUNC(ROUND( ((TO_DATE(A.EDU_ED_DTM,'YYYYMMDDHH24MISS')-TO_DATE(A.EDU_ST_DTM,'YYYYMMDDHH24MISS')) )*24*60*60))
+                                                                     else null end AS EX_EDU_MIN   
+                                                               ,A.EDU_ST_DTM,A.EDU_ED_DTM
+                                                               ,B.MIN_LECTURE_SDT,B.MAX_LECTURE_EDT
+                                                           FROM E1_WEEKS_ATTEND A,
+                                                               (
+                                                                 SELECT A.KJKEY,A.LECTURE_WEEKS
+                                                                       ,CASE WHEN A.ATTEND_BS = '1' THEN '00000000000000'
+                                                                             WHEN A.ATTEND_BS = '2' THEN A.LECTURE_SDT||'00'
+                                                                             WHEN A.ATTEND_BS = '3' THEN '00000000000000'
+                                                                             ELSE A.LECTURE_SDT||'00' end AS MIN_LECTURE_SDT
+                                                                       ,CASE WHEN A.ATTEND_BS = '1' THEN '99991231235959'
+                                                                             WHEN A.ATTEND_BS = '2' THEN A.LECTURE_EDT||'59'
+                                                                             WHEN A.ATTEND_BS = '3' THEN A.LECTURE_EDT||'59'
+                                                                             ELSE A.LECTURE_EDT||'59' end AS MAX_LECTURE_EDT
+                                                                       ,F_LATE_MAX_ALLOW_DT(A.KJKEY) AS LAST_LECTURE_EDT
+                                                                   FROM E1_LECTURE_WEEKS A 
+                                                                  WHERE A.KJKEY =  <param name="session.kjkey" index="#" />
+                                                                    AND A.LECTURE_WEEKS =  <param name="LECTURE_WEEKS" index="#" />
+                                                               ) B 
+                                                          WHERE B.KJKEY =  <param name="session.kjkey" index="#" />
+                                                            AND A.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#" />
+                                                            AND A.KJKEY = B.KJKEY
+                                                            AND A.LECTURE_WEEKS = B.LECTURE_WEEKS
+                                                            AND A.EDU_ST_DTM IS NOT NULL
+                                                            AND A.EDU_ED_DTM IS NOT NULL 
+                                                      ) A
+                                                GROUP BY A.USER_ID,A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ 
+                                              ) A, 
+                                              (
+                                                  select a.kjkey, A.LECTURE_WEEKS,(NVL(A.ATTEND_MIN_TM,0)*60)+NVL(A.ATTEND_SEC_TM,0) AS ATTEND_MIN_TM
+                                                         ,a.LINK_SEQ,b.user_id 
+                                                    from  E1_CONTENTS_LINK a, 
+                                                          (
+                                                            SELECT B.KJKEY,C.COLREG_NO as user_id
+                                                              FROM E1_CLASS_LECTURE B
+                                                                  ,HAK_COURSE_APPLY C
+                                                             WHERE B.KJKEY =  <param name="session.kjkey" index="#" />
+                                                               AND B.ORG_SECT = C.ORG_SECT
+                                                               AND B.YEAR = C.LEDG_YEAR
+                                                               AND B.TERM = C.LEDG_SESSN
+                                                               AND B.LSSN_CD = C.LSSN_CD
+                                                               AND B.SUBJT_NO = C.SUBJT_NO
+                                                               AND C.RESLT_DESTR_CD = 'N'  
+                                                               AND C.COLREG_NO = <param name="USER_ID" index="#" />
+                                                           union all
+                                                            SELECT a.KJKEY,a.auditor_id as user_id
+                                                              FROM e1_class_auditor a 
+                                                             WHERE a.KJKEY =  <param name="session.kjkey" index="#" />
+                                                               and A.SU_DECISION = '2'
+                                                               AND A.AUDITOR_DIV = '2'  
+                                                               AND A.AUDITOR_ID = <param name="USER_ID" index="#" />                                                            
+                                                          ) b  
+                                                    where A.KJKEY =  <param name="session.kjkey" index="#" />
+                                                      AND A.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#" />
+                                                      and A.kjkey = B.kjkey                                                                                                     
+                                              ) B
+                                      WHERE B.KJKEY = A.KJKEY(+)
+                                        AND B.LECTURE_WEEKS = A.LECTURE_WEEKS(+)
+                                        AND B.LINK_SEQ = A.LINK_SEQ(+)  
+                                        AND B.USER_ID = A.USER_ID(+)
+                                        AND B.KJKEY = <param name="session.kjkey" index="#" />
+                                        AND B.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#" />
+                                    ) A   
+                           ) A 
+                        GROUP BY A.KJKEY,A.LECTURE_WEEKS,A.USER_ID                               
+                 ) A, E1_LECTURE_WEEKS B, E1_ONLINE_ATTEND_BASE C, E1_CLASS_ATTEND_MST D
+           WHERE A.KJKEY = B.KJKEY
+             AND A.LECTURE_WEEKS = B.LECTURE_WEEKS 
+             AND A.KJKEY = <param name="session.kjkey" index="#" />
+             AND A.LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#" />
+             AND A.USER_ID = <param name="USER_ID" index="#" />
+             AND B.ATTEND_NO = D.ATTEND_NO
+    </query>             
+  </executeQuery>
+  
+  
+  <!-- 온라인 강의 관련 커리문 START -->
+   <!-- 온라인강의 진도정보 삭제 -->
+  <executeQuery id="deleteWeeksProgressAll"  statementType="pstmt">
+    <query>
+      DELETE FROM E1_WEEKS_PROGRESS 
+       WHERE KJKEY = <param name="session.kjkey" index="#" xss="all"/>
+         AND LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#" xss="all"/>
+    </query>
+  </executeQuery>
+  
+  <!-- 온라인강의 출석이력 삭제 -->
+  <executeQuery id="deleteWeeksAttendAll"  statementType="pstmt">
+    <query>
+      DELETE FROM E1_WEEKS_ATTEND 
+       WHERE KJKEY = <param name="session.kjkey" index="#" xss="all"/>
+         AND LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#" xss="all"/>
+    </query>
+  </executeQuery>
+  
+  <!-- 온라인강의 콘텐츠 삭제 -->
+  <executeQuery id="deleteContentsAll"  statementType="pstmt">
+    <query>
+      DELETE FROM E1_CONTENTS_LINK 
+       WHERE KJKEY = <param name="session.kjkey" index="#" xss="all"/>
+         AND LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#" xss="all"/>
+    </query>
+  </executeQuery>
+  
+  <!-- 온라인강의 차시 삭제 -->
+  <executeQuery id="deleteChapter"  statementType="pstmt">
+    <query>
+      DELETE FROM E1_LECTURE_WEEKS 
+       WHERE KJKEY = <param name="session.kjkey" index="#" xss="all"/>
+         AND LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#" xss="all"/>
+    </query>
+  </executeQuery> 
+  
+  <!-- 온라인강의 차시 출석 미체크로 변경 -->
+  <executeQuery id="updateChapterAttendNoChk"  statementType="pstmt">
+    <query>
+      UPDATE E1_LECTURE_WEEKS
+         SET ATTEND_NO = ''
+             ,ATTEND_TARGET_DV = '1'
+       WHERE KJKEY = <param name="session.kjkey" index="#" xss="all"/>
+         AND LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#" xss="all"/>
+    </query>
+  </executeQuery> 
+  
+  <!-- 온라인강의 차시 수정 -->
+  <executeQuery id="updateChapterWeekTime"  statementType="pstmt">
+    <query>
+      UPDATE E1_LECTURE_WEEKS 
+         SET WEEK_NO = <param name="WEEK_NO" index="#" xss="all"/>
+             ,WEEK_TIME = <param name="WEEK_TIME" index="#" xss="all"/>
+             ,UPT_ID = <param name="session.user_id" index="#" xss="all"/>
+             ,UPT_DTM = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+       WHERE KJKEY = <param name="session.kjkey" index="#" xss="all"/>
+         AND LECTURE_WEEKS = <param name="LECTURE_WEEKS" index="#" xss="all"/>
+    </query>
+  </executeQuery>  
+  <!-- 온라인 강의 관련 커리문 END -->    
+  
+  <!-- 학생 출석부 조회 -->
+  <!-- 학생 출석 목록 -->
+  <executeQuery statementType="stmt" id="getAttendMstStuList">
+    <query>
+ SELECT  A.KJKEY
+        ,A.WEEK_NO
+  FROM E1_CLASS_ATTEND_MST A 
+ WHERE KJKEY = <param name="session.kjkey"  index="#"/>
+   AND ATTEND_MST_DIV IS NOT NULL
+ GROUP BY A.KJKEY,A.WEEK_NO  
+ ORDER BY A.WEEK_NO 
+    </query>  
+  </executeQuery>  
+  <executeQuery statementType="stmt" id="getAttendStuList">
+    <query>
+      SELECT A.KJKEY
+            ,A.ATTEND_NO
+            ,A.WEEK_NO
+            ,A.WEEK_TIME
+            ,A.ATTEND_MST_DIV
+            ,A.ON_OFF_DIV        
+            ,A.ATTEND_DT
+            ,A.LECT_SUPPLY_YN 
+            ,A.LECT_CANCEL_WEEK_NO
+            ,A.LECT_CANCEL_WEEK_TIME
+            ,A.LECT_CANCEL_ATTEND_DT
+            ,A.LECT_CANCEL_RSN_CD
+            ,A.LECT_CANCEL_RSN_NOTE
+            ,A.REG_ID
+            ,A.REG_DTM       
+            ,A.ATTEND_ID
+            ,A.ATTEND_DIV 
+            ,A.ATTEND_DIV_NM
+            ,B.LECTURE_WEEKS
+        FROM (
+              SELECT A.KJKEY
+                    ,A.ATTEND_NO
+                    ,A.WEEK_NO
+                    ,A.WEEK_TIME
+                    ,A.ATTEND_MST_DIV
+                    ,CASE WHEN A.ATTEND_MST_DIV = '3' THEN '2' 
+                          WHEN A.ATTEND_MST_DIV = '6' THEN '3'
+                          ELSE '1' END ON_OFF_DIV        
+                    ,A.ATTEND_DT
+                    ,CASE WHEN A.LECT_CANCEL_WEEK_NO > 0 THEN 'Y'
+                          ELSE 'N' END AS LECT_SUPPLY_YN 
+                    ,A.LECT_CANCEL_WEEK_NO
+                    ,A.LECT_CANCEL_WEEK_TIME
+                    ,A.LECT_CANCEL_ATTEND_DT
+                    ,A.LECT_CANCEL_RSN_CD
+                    ,A.LECT_CANCEL_RSN_NOTE
+                    ,A.REG_ID
+                    ,A.REG_DTM       
+                    ,B.ATTEND_ID
+                    ,B.ATTEND_DIV  AS ATTEND_DIV 
+                    ,CASE WHEN B.ATTEND_DIV = '1' THEN '출석'
+                          WHEN B.ATTEND_DIV = '2' THEN '결석'
+                          WHEN b.ATTEND_DIV = '3' THEN '지각' 
+                          ELSE '미출석' END AS ATTEND_DIV_NM
+               FROM E1_CLASS_ATTEND_MST A, E1_CLASS_ATTEND B 
+               WHERE A.KJKEY  = B.KJKEY(+)
+                 AND A.ATTEND_NO  = B.ATTEND_NO(+)
+                 AND A.ATTEND_MST_DIV != '6'
+                 AND A.WEEK_NO = <param name="WEEK_NO" index="#" />
+                 AND A.KJKEY = <param name="session.kjkey"  index="#"/>
+                 AND <param name="session.user_id"  index="#"/> = B.ATTEND_ID(+)
+              ) A
+             ,E1_LECTURE_WEEKS B
+       WHERE A.KJKEY = B.KJKEY(+)
+         AND A.ATTEND_NO = B.ATTEND_NO(+) 
+       order by A.WEEK_NO ASC, A.WEEK_TIME  ASC  
+    </query>
+  </executeQuery>  
+  
+  <!-- 학생 진도율 가져오기(차시평균) -->
+  <executeQuery statementType="stmt" id="getStAttendRt">
+    <query>
+       SELECT  ROUND(AVG(ATTEND_RT)*10)/10 AS ATTEND_RT
+              ,ROUND(AVG(EX_ATTEND_RT)*10)/10 AS EX_ATTEND_RT
+         FROM (
+               SELECT A.KJKEY,A.LECTURE_WEEKS
+                     ,CASE WHEN SUM(ATTEND_MIN_TM) = 0 
+                           THEN CASE WHEN SUM(ORG_ATTEND_TM) > 0
+                                     THEN 100
+                                     ELSE 0 
+                                 END
+                           ELSE TRUNC(SUM(ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100) 
+                       END AS ATTEND_RT
+                     ,CASE WHEN SUM(ATTEND_MIN_TM) = 0 
+                           THEN CASE WHEN SUM(ORG_EX_ATTEND_TM) > 0
+                                     THEN 100
+                                     ELSE 0
+                                 END 
+                           ELSE TRUNC(SUM(EX_ATTEND_TM+ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100 )  -  TRUNC( SUM(ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100 ) END AS EX_ATTEND_RT
+                     ,SUM(ORG_ATTEND_TM) AS ORG_ATTEND_TM
+                     ,SUM(ORG_EX_ATTEND_TM) AS ORG_EX_ATTEND_TM 
+                FROM (
+                        SELECT A.KJKEY,A.LECTURE_WEEKS
+                              ,A.ATTEND_TM
+                              ,CASE WHEN NVL(A.ATTEND_MIN_TM,0) - NVL(A.ATTEND_TM,0)  >  NVL(A.EX_ATTEND_TM,0)  
+                                    THEN NVL(A.EX_ATTEND_TM,0)  ELSE   NVL(A.ATTEND_MIN_TM,0)- NVL(A.ATTEND_TM,0)  END EX_ATTEND_TM
+                              ,NVL(A.ATTEND_MIN_TM ,0) AS ATTEND_MIN_TM
+                              ,NVL(A.ORG_ATTEND_TM,0) AS ORG_ATTEND_TM
+                              ,NVL(A.EX_ATTEND_TM,0) AS ORG_EX_ATTEND_TM
+                        FROM  (
+                                SELECT B.KJKEY,B.LECTURE_WEEKS,B.LINK_SEQ
+                                      ,B.ATTEND_MIN_TM   AS ATTEND_MIN_TM
+                                      ,CASE WHEN NVL(A.ATTEND_TM,0) > NVL(B.ATTEND_MIN_TM,0) THEN NVL(B.ATTEND_MIN_TM,0) ELSE NVL(A.ATTEND_TM,0) END AS ATTEND_TM
+                                      ,A.ATTEND_TM    AS ORG_ATTEND_TM
+                                      ,A.EX_ATTEND_TM AS EX_ATTEND_TM
+                                  FROM (
+                                         SELECT A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ
+                                               ,SUM(A.EDU_MIN)  AS ATTEND_TM
+                                               ,SUM(A.EX_EDU_MIN)  AS EX_ATTEND_TM
+                                           FROM (
+                                                   SELECT A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ
+                                                         ,case when A.EDU_ST_DTM <![CDATA[ < ]]>  B.MAX_LECTURE_EDT then 
+                                                                    TRUNC(ROUND( ((TO_DATE(A.EDU_ED_DTM,'YYYYMMDDHH24MISS')-TO_DATE(A.EDU_ST_DTM,'YYYYMMDDHH24MISS')) )*24*60*60))
+                                                               else null end AS EDU_MIN
+                                                         ,case when A.EDU_ST_DTM >=  B.MAX_LECTURE_EDT AND A.EDU_ST_DTM  <![CDATA[ <= ]]>  B.LAST_LECTURE_EDT THEN 
+                                                                    TRUNC(ROUND( ((TO_DATE(A.EDU_ED_DTM,'YYYYMMDDHH24MISS')-TO_DATE(A.EDU_ST_DTM,'YYYYMMDDHH24MISS')) )*24*60*60))
+                                                               else null end AS EX_EDU_MIN   
+                                                         ,A.EDU_ST_DTM,A.EDU_ED_DTM
+                                                         ,B.MIN_LECTURE_SDT,B.MAX_LECTURE_EDT
+                                                     FROM E1_WEEKS_ATTEND A,
+                                                         (
+                                                           SELECT A.KJKEY,A.LECTURE_WEEKS
+                                                                 ,CASE WHEN A.ATTEND_BS = '1' THEN '00000000000000'
+                                                                       WHEN A.ATTEND_BS = '2' THEN A.LECTURE_SDT||'00'
+                                                                       WHEN A.ATTEND_BS = '3' THEN '00000000000000'
+                                                                       ELSE A.LECTURE_SDT||'00' end AS MIN_LECTURE_SDT
+                                                                 ,CASE WHEN A.ATTEND_BS = '1' THEN '99991231235959'
+                                                                       WHEN A.ATTEND_BS = '2' THEN A.LECTURE_EDT||'59'
+                                                                       WHEN A.ATTEND_BS = '3' THEN A.LECTURE_EDT||'59'
+                                                                       ELSE A.LECTURE_EDT||'59' end AS MAX_LECTURE_EDT
+                                                                 ,F_LATE_MAX_ALLOW_DT(A.KJKEY) AS LAST_LECTURE_EDT
+                                                             FROM E1_LECTURE_WEEKS A 
+                                                            WHERE A.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                         ) B 
+                                                    WHERE B.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                      AND A.KJKEY = B.KJKEY
+                                                      AND A.LECTURE_WEEKS = B.LECTURE_WEEKS
+                                                      AND A.EDU_ST_DTM IS NOT NULL
+                                                      AND A.EDU_ED_DTM IS NOT NULL 
+                                                      AND A.USER_ID = <param name="session.user_id" index="#"/>
+                                                ) A
+                                          GROUP BY A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ 
+                                        ) A, 
+                                        (
+                                            select a.kjkey, A.LECTURE_WEEKS,(NVL(B.ATTEND_MIN_TM,0)*60)+NVL(B.ATTEND_SEC_TM,0) AS ATTEND_MIN_TM
+                                                   ,B.LINK_SEQ
+                                              from  E1_LECTURE_WEEKS A, E1_CONTENTS_LINK B
+                                              where A.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                AND A.KJKEY = B.KJKEY(+)
+                                                AND A.LECTURE_WEEKS = B.LECTURE_WEEKS(+)                                                                                 
+                                        ) B
+                                WHERE B.KJKEY = A.KJKEY(+)
+                                  AND B.LECTURE_WEEKS = A.LECTURE_WEEKS(+)
+                                  AND B.LINK_SEQ = A.LINK_SEQ(+)  
+                                  AND B.KJKEY = <param name="session.kjkey" index="#"/>
+                              ) A   
+                     ) A 
+                  GROUP BY A.KJKEY,A.LECTURE_WEEKS
+                  
+                  UNION ALL
+                  
+                  SELECT A.KJKEY
+                         ,NULL AS LECTURE_WEEKS
+                         ,CASE WHEN B.ATTEND_DIV = '1'
+                               THEN 100
+                               ELSE 0
+                           END AS ATTEND_RT
+                         ,0 AS EX_ATTEND_RT
+                         ,0 AS ORG_ATTEND_TM
+                         ,0 AS ORG_EX_ATTEND_TM 
+                    FROM E1_CLASS_ATTEND_MST A
+                         ,E1_CLASS_ATTEND B
+                   WHERE A.KJKEY = <param name="session.kjkey" index="#"/>
+                     AND A.ATTEND_MST_DIV IN ('1','2','4','5')
+                     AND A.KJKEY = B.KJKEY(+)
+                     AND A.ATTEND_NO = B.ATTEND_NO(+)
+                     AND B.ATTEND_ID(+) = <param name="session.user_id" index="#"/>
+          ) A
+    </query>
+  </executeQuery>
+  
+  <!-- 학생 최대진도율 가져오기(출석률) -->
+  <executeQuery statementType="stmt" id="getStMaxAttendRt">
+    <query>
+       SELECT  ROUND(AVG(A.ATTEND_RT)*10)/10 AS ATTEND_RT
+              ,ROUND(AVG(A.EX_ATTEND_RT)*10)/10 AS EX_ATTEND_RT
+         FROM (
+               SELECT A.KJKEY,A.LECTURE_WEEKS
+                     ,CASE WHEN SUM(ATTEND_MIN_TM) = 0 
+                           THEN CASE WHEN SUM(ORG_ATTEND_TM) > 0
+                                     THEN 100
+                                     ELSE 0 
+                                 END
+                           ELSE TRUNC(SUM(ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100) 
+                       END AS ATTEND_RT
+                     ,CASE WHEN SUM(ATTEND_MIN_TM) = 0 
+                           THEN CASE WHEN SUM(ORG_EX_ATTEND_TM) > 0
+                                     THEN 100
+                                     ELSE 0
+                                 END 
+                           ELSE TRUNC(SUM(EX_ATTEND_TM+ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100 )  -  TRUNC( SUM(ATTEND_TM)/SUM((ATTEND_MIN_TM ))*100 ) END AS EX_ATTEND_RT
+                     ,SUM(ORG_ATTEND_TM) AS ORG_ATTEND_TM
+                     ,SUM(ORG_EX_ATTEND_TM) AS ORG_EX_ATTEND_TM 
+                FROM (
+                        SELECT A.KJKEY,A.LECTURE_WEEKS
+                              ,A.ATTEND_TM
+                              ,CASE WHEN NVL(A.ATTEND_MIN_TM,0) - NVL(A.ATTEND_TM,0)  >  NVL(A.EX_ATTEND_TM,0)  
+                                    THEN NVL(A.EX_ATTEND_TM,0)  ELSE   NVL(A.ATTEND_MIN_TM,0)- NVL(A.ATTEND_TM,0)  END EX_ATTEND_TM
+                              ,NVL(A.ATTEND_MIN_TM ,0) AS ATTEND_MIN_TM
+                              ,NVL(A.ORG_ATTEND_TM,0) AS ORG_ATTEND_TM
+                              ,NVL(A.EX_ATTEND_TM,0) AS ORG_EX_ATTEND_TM
+                        FROM  (
+                                SELECT B.KJKEY,B.LECTURE_WEEKS,B.LINK_SEQ
+                                      ,B.ATTEND_MIN_TM   AS ATTEND_MIN_TM
+                                      ,CASE WHEN TO_CHAR(SYSDATE,'YYYYMMDDHH24MI') > B.LECTURE_EDT 
+                                            THEN CASE WHEN NVL(A.ATTEND_TM,0) > NVL(B.ATTEND_MIN_TM,0) THEN NVL(B.ATTEND_MIN_TM,0) ELSE NVL(A.ATTEND_TM,0) END 
+                                            ELSE NVL(B.ATTEND_MIN_TM,0)
+                                            END AS ATTEND_TM
+                                      ,CASE WHEN TO_CHAR(SYSDATE,'YYYYMMDDHH24MI') > B.LECTURE_EDT
+                                            THEN A.ATTEND_TM
+                                            ELSE 1
+                                            END AS ORG_ATTEND_TM
+                                      ,A.EX_ATTEND_TM AS EX_ATTEND_TM
+                                  FROM (
+                                         SELECT A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ
+                                               ,SUM(A.EDU_MIN)  AS ATTEND_TM
+                                               ,SUM(A.EX_EDU_MIN)  AS EX_ATTEND_TM
+                                           FROM (
+                                                   SELECT A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ
+                                                         ,case when A.EDU_ST_DTM <![CDATA[ < ]]>  B.MAX_LECTURE_EDT then 
+                                                                    TRUNC(ROUND( ((TO_DATE(A.EDU_ED_DTM,'YYYYMMDDHH24MISS')-TO_DATE(A.EDU_ST_DTM,'YYYYMMDDHH24MISS')) )*24*60*60))
+                                                               else null end AS EDU_MIN
+                                                         ,case when A.EDU_ST_DTM >=  B.MAX_LECTURE_EDT AND A.EDU_ST_DTM  <![CDATA[ <= ]]>  B.LAST_LECTURE_EDT THEN 
+                                                                    TRUNC(ROUND( ((TO_DATE(A.EDU_ED_DTM,'YYYYMMDDHH24MISS')-TO_DATE(A.EDU_ST_DTM,'YYYYMMDDHH24MISS')) )*24*60*60))
+                                                               else null end AS EX_EDU_MIN   
+                                                         ,A.EDU_ST_DTM,A.EDU_ED_DTM
+                                                         ,B.MIN_LECTURE_SDT,B.MAX_LECTURE_EDT
+                                                     FROM E1_WEEKS_ATTEND A,
+                                                         (
+                                                           SELECT A.KJKEY,A.LECTURE_WEEKS
+                                                                 ,CASE WHEN A.ATTEND_BS = '1' THEN '00000000000000'
+                                                                       WHEN A.ATTEND_BS = '2' THEN A.LECTURE_SDT||'00'
+                                                                       WHEN A.ATTEND_BS = '3' THEN '00000000000000'
+                                                                       ELSE A.LECTURE_SDT||'00' end AS MIN_LECTURE_SDT
+                                                                 ,CASE WHEN A.ATTEND_BS = '1' THEN '99991231235959'
+                                                                       WHEN A.ATTEND_BS = '2' THEN A.LECTURE_EDT||'59'
+                                                                       WHEN A.ATTEND_BS = '3' THEN A.LECTURE_EDT||'59'
+                                                                       ELSE A.LECTURE_EDT||'59' end AS MAX_LECTURE_EDT
+                                                                 ,F_LATE_MAX_ALLOW_DT(A.KJKEY) AS LAST_LECTURE_EDT
+                                                             FROM E1_LECTURE_WEEKS A 
+                                                            WHERE A.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                              AND TO_CHAR(SYSDATE,'YYYYMMDDHH24MI') > A.LECTURE_EDT 
+                                                         ) B 
+                                                    WHERE B.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                      AND A.KJKEY = B.KJKEY
+                                                      AND A.LECTURE_WEEKS = B.LECTURE_WEEKS
+                                                      AND A.EDU_ST_DTM IS NOT NULL
+                                                      AND A.EDU_ED_DTM IS NOT NULL 
+                                                      AND A.USER_ID = <param name="session.user_id" index="#"/>
+                                                ) A
+                                          GROUP BY A.KJKEY,A.LECTURE_WEEKS,A.LINK_SEQ 
+                                        ) A, 
+                                        (
+                                            select a.kjkey, A.LECTURE_WEEKS,(NVL(B.ATTEND_MIN_TM,0)*60)+NVL(B.ATTEND_SEC_TM,0) AS ATTEND_MIN_TM
+                                                   ,B.LINK_SEQ
+                                                   ,A.LECTURE_EDT
+                                              from  E1_LECTURE_WEEKS A, E1_CONTENTS_LINK B
+                                              where A.KJKEY =  <param name="session.kjkey" index="#"/>
+                                                AND A.KJKEY = B.KJKEY(+)
+                                                AND A.LECTURE_WEEKS = B.LECTURE_WEEKS(+)                                                                                 
+                                        ) B
+                                WHERE B.KJKEY = A.KJKEY(+)
+                                  AND B.LECTURE_WEEKS = A.LECTURE_WEEKS(+)
+                                  AND B.LINK_SEQ = A.LINK_SEQ(+)  
+                                  AND B.KJKEY = <param name="session.kjkey" index="#"/>
+                              ) A   
+                     ) A 
+                  GROUP BY A.KJKEY,A.LECTURE_WEEKS
+                  
+                  UNION ALL
+                  
+                  SELECT A.KJKEY
+                         ,NULL AS LECTURE_WEEKS
+                         ,CASE WHEN B.ATTEND_DIV = '1'
+                               THEN 100
+                               ELSE 0
+                           END AS ATTEND_RT
+                         ,0 AS EX_ATTEND_RT
+                         ,0 AS ORG_ATTEND_TM
+                         ,0 AS ORG_EX_ATTEND_TM 
+                    FROM E1_CLASS_ATTEND_MST A
+                         ,E1_CLASS_ATTEND B
+                   WHERE A.KJKEY = <param name="session.kjkey" index="#"/>
+                     AND A.ATTEND_MST_DIV IN ('1','2','4','5')
+                     AND A.KJKEY = B.KJKEY(+)
+                     AND A.ATTEND_NO = B.ATTEND_NO(+)
+                     AND B.ATTEND_ID(+) = <param name="session.user_id" index="#"/>
+          ) A
+    </query>
+  </executeQuery>
+</sqlx>

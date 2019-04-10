@@ -1,0 +1,214 @@
+<%@ page contentType="text/html; charset=utf-8" session="false" %>
+<%@ page import="com.aimaxsoft.sssdframework.web.RequestParameter"%>
+<%@page import="com.aimaxsoft.sssdframework.i18n.ContentsManager"%>
+<%@page import="com.aimaxsoft.sssdframework.db.DataCabinetFactory"%>
+<%@page import="com.aimaxsoft.sssdframework.util.ServiceSite"%>
+<%@page import="com.aimaxsoft.sssdframework.util.EnvUtility"%>
+<%@page import="com.aimaxsoft.sssdframework.db.DataCabinet"%>
+<%@page import="com.aimaxsoft.sssdframework.util.Change"%>
+<%@page import="java.util.ResourceBundle"%>
+<%@page import="org.apache.log4j.Logger"%>
+<%@page import="eclass.AuthManager"%>
+<%@page import="eclass.StuMenu"%>
+<%@page import="util.EtcUtil"%>
+<%
+  RequestParameter paramRoom = (RequestParameter) request.getAttribute("param");
+  ResourceBundle viewItem3 = ContentsManager.getResourceBundle(ServiceSite.getId()); 
+  HttpSession sessionRoom = request.getSession(false);
+
+  StuMenu menu    = AuthManager.getInstance().getStuMenu(paramRoom);
+  StuMenu board   = AuthManager.getInstance().getStuCourseBoard(paramRoom);
+  StuMenu board2  = AuthManager.getInstance().getStuCourseBoard(paramRoom);
+  
+  String menu_id  = AuthManager.getInstance().getMenuId(paramRoom.getXtring("__acl__"));
+  String menu_id1 = menu_id+"_"+paramRoom.getXtring("ARTL_GRP_ID");
+  
+  String session_kj_year = "";
+  String session_kj_term = "";
+  String session_kj_auth = "";
+  String session_kj_lect_type= "";
+  //신규 세션 교수에서 학생 모드로 이동할 경우
+  String kjauth2 = "";
+  String _cursor = "pointer";
+  
+  DataCabinet session_open_subjects = null;
+  if(sessionRoom != null) {
+    session_kj_year =  Change.null2empty( sessionRoom.getAttribute("kj_year"));
+    session_kj_term =  Change.null2empty( sessionRoom.getAttribute("kj_term"));
+    session_kj_auth =  Change.null2empty( sessionRoom.getAttribute("kj_auth"));
+    session_open_subjects = (DataCabinet) sessionRoom.getAttribute("stu_open_subjects");
+    session_kj_lect_type =  Change.null2empty( sessionRoom.getAttribute("kj_lect_type"));
+    kjauth2 =  Change.null2empty( sessionRoom.getAttribute("kjauth2"));
+   
+  }
+  else {
+    session_open_subjects = DataCabinetFactory.getDataCabinet();
+  }  
+ 
+  //대구가톨릭대학교 (성적공개(학생 성적조회 제외 및 학점부여 제외)
+  String eval_open_score_yn = Change.null2empty(EnvUtility.getSProperty().getString("eval.result.open_score.yn"));
+%>
+<script type="text/javascript">
+<!--
+
+$(function() {
+  $("#lectureRoom").click(function( ) {
+    document.location.href="/ilos/st/course/submain_form.acl?acl=submain_form.acl&s=menu";
+  }).css("cursor","pointer");
+  
+  $(document).keydown(function(e){
+    if (e.keyCode != 27) return true;
+    callback();   
+    return false;
+  });
+  
+  $(document).mousedown(function(e){
+    if($("#subject_room").css("display") == 'block'){
+      if($(e.target).parents("#subject_room").size() == 0){
+        callback();
+      }
+    }
+  });
+  // 이동
+  $("#eclass_subject_change").click(function() {
+    <%
+      if("T".equals(kjauth2)) {
+        _cursor = "";
+      } else {
+    %>
+      eclassSubjectChange();
+    <%
+      }
+    %>
+    return false;
+  }).css("cursor","<%=_cursor%>");
+  //cursor: pointer;
+  
+  updateTransition();
+});
+
+function callback () {
+  $(".term").removeClass("termBg");
+  $("#subject_room").hide("blind",300);
+};
+
+function eclassSubjectChange(url){
+  if($("#subject_room").css("display") == 'none'){
+    if($(".subject-main").size() == '0') {
+      $.ajax({
+        url: "/ilos/st/course/eclass_room_search_form.acl",
+        type: "POST",
+        data: {
+               ROOM_SCH_YEAR : $("#KJ_YEAR").val(),
+               ROOM_SCH_TERM : $("#KJ_TERM").val(),
+               ROOM_SCH_KEY : $("#KJ_KEY").val(),
+               returnURI : $("#returnURI").val(),
+               encoding : "utf-8"
+              },
+        async: false,
+        success: function(html){
+                $("#subject_room").html(html);
+          },
+          error : function(x, o, e){
+                alert(x.status + " : "+ o +" : "+e);
+          }
+      });
+    }
+    $(".term").addClass("termBg");
+    $("#subject_room").show("blind",300);
+  }
+//   else {
+//     callback();
+//   }
+}
+
+function updateTransition() {
+    var el = document.querySelector("h2.site-font-color1");
+     
+    if (el) {
+      el.className = "site-font-color";
+    } else {
+      el = document.querySelector("h2.site-font-color");
+      el.className = "site-font-color1";
+    }
+     
+    return el;
+  }
+//-->
+</script>
+			<div id="lnb">
+				<div class="leftmenu">
+					<h2 onclick="location.href='/ilos/st/course/submain_form.acl'" class="site-font-color1"><%=viewItem_.getString("수강과목") %></h2>
+          
+          <div class="course-subject" style="">
+            <div id="subject-nm-form" class="site-font-color term" >
+              <input type="hidden" name="KJ_YEAR" id="KJ_YEAR"  value="<%=session_kj_year%>">
+              <input type="hidden" name="KJ_TERM" id="KJ_TERM"  value="<%=session_kj_term%>">
+              <input type="hidden" name="KJ_KEY" id="KJ_KEY"  value="<%=paramRoom.getString("session.kjkey")%>">
+              <input type="hidden" name="returnURI" id="returnURI"  value="<%=sessionRoom.getAttribute("returnURI") == null ? "/ilos/st/course/submain_form.acl" :sessionRoom.getAttribute("returnURI")%>">             
+              <%= session_kj_year %>-<%=viewItem_.getString(session_kj_term+"학기") %>
+            </div>
+             
+            <div style="border:1px solid #747474; overflow: hidden; background-color: #fff;  font-size: 95%; text-align: left;"  id="eclass_subject_change"  >
+              <span id="subject-span" class="site-font-color" style="font-weight: bold; padding-top:3px; padding-left:2px; float: left; overflow:hidden; text-overflow: clip; white-space:nowrap;  width: 99px;" title="<%if ("Y".equals(EnvUtility.getSProperty().getString("site.campus.diplay")) ){ %>[<%= paramRoom.getString("session.kj_campus_nm_"+EtcUtil.getLocate(viewItem_)) %>]<%} %><%= paramRoom.getString("session.kj_subjt_nm") %>(<%= paramRoom.getString("session.kj_subjt_no") %>)">
+                <%if ("Y".equals(EnvUtility.getSProperty().getString("site.campus.diplay")) ){ %>[<%= paramRoom.getString("session.kj_campus_nm_"+EtcUtil.getLocate(viewItem_)) %>]<%} %><%= paramRoom.getString("session.kj_subjt_nm_"+EtcUtil.getLocate(viewItem_)) %>(<%= paramRoom.getString("session.kj_subjt_no") %>)
+              </span>
+              <img src="/ilos/images/common/lnb/arrow_bottom.png" style="float: right; width: 8px; margin: 6px 3px 0 0;" />
+            </div>
+             
+            <div style="position: absolute; width: 430px; z-index: 979; display: none; top:105px; left: 30px;" id="subject_room"></div>
+            
+            <p class="time" style="height : auto; word-break: break-all;" title="<%= paramRoom.getString("session.kj_lect_time_"+EtcUtil.getLocate(viewItem_)) %>">
+              <%if("0".equals(session_kj_lect_type) ) {%>
+                  <%= paramRoom.getString("session.kj_lect_time_"+EtcUtil.getLocate(viewItem_))%>
+              <%} %>  
+            </p>
+          </div>
+          
+					<ul>
+            <%
+              while(menu.next()) {
+                if(paramRoom.getXtring("session.kj_lms_version").equals(menu.getLmsVersion())){
+            %>
+              <li id="<%=menu.getAppId()%>">
+                <a href="<%=menu.getPcURI()%>" <%=menu_id.equals(menu.getMenuId()) ? "class=\"on\"" : ""%>><%=viewItem.getString(menu.getMenuNm()) %></a>
+              </li>
+            <%} }%>
+					</ul>
+					<div class="bg_bot"></div>
+				</div>
+        
+        <%if(board2.next()) {%>
+        <!-- 2차 메뉴 영역 -->
+        <div class="leftmenu-admin">
+          <div class="bg_top"></div>
+          <ul style="background: none; padding-top: 2px;">
+            <%while(board.next()) {%>
+              <li id="<%=board.getAppId()%>">
+                <a href="<%=board.getPcURI()%>" <%=menu_id1.equals(board.getMenuId()) ? "class=\"on\"" : ""%>><%=board.getMenuNm() %></a>
+              </li>
+            <%} %>
+          </ul>
+          <div class="bg_bot"></div>
+        </div>
+        <%} %>
+				
+        <%
+            if("sogang".equals(ServiceSite.getId())) {
+              if(!"B".equals(session_kj_term)) {
+        %>
+        <div style="margin: 5px 0 0 1px;  border: 1px solid  #dfdddd; padding: 2px;">
+          <div>
+            <a href="/ilos/st/link/site_link1.acl" target="_blank"><img src="/ilos/images/osms/<%=ServiceSite.getId()%>/link_06.png"></a>
+          </div>
+          <div style="margin-top: 3px;">
+            <a href="/ilos/st/link/site_link2.acl" target="_blank"><img src="/ilos/images/osms/<%=ServiceSite.getId()%>/link_07.png"></a>
+          </div>
+        </div>
+        <%
+              }
+            } 
+        %>
+			</div>
+			<hr>
+<!--<div style="position: absolute;  z-index:9; top:0; left:0;" id="popup_room"></div>-->

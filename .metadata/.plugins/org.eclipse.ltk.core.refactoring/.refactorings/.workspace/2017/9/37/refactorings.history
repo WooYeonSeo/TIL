@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Delete 6 resources" deleteContents="false" description="Delete 6 resources" element1="/ilos4.1_00/logs/ilos.log.2017-08-31" element2="/ilos4.1_00/logs/ilos.log.2017-09-04" element3="/ilos4.1_00/logs/ilos.log.2017-09-06" element4="/ilos4.1_00/logs/ilos.log.2017-09-07" element5="/ilos4.1_00/logs/ilos.log.2017-09-08" element6="/ilos4.1_00/logs/ilos.log.2017-09-11" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="6" stamp="1505264271639"/>
+</session>

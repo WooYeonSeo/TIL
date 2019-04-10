@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="org.eclipse.ui.texteditor.GotoLineAction$GotoLineDialog_dialogBounds">
+		<item value="344" key="DIALOG_Y_ORIGIN"/>
+		<item value="489" key="DIALOG_X_ORIGIN"/>
+	</section>
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
+		<item value="false" key="isRegEx"/>
+		<item value="army" key="selection"/>
+		<item value="false" key="casesensitive"/>
+		<item value="true" key="incremental"/>
+		<item value="true" key="wrap"/>
+		<item value="false" key="wholeword"/>
+		<list key="findhistory">
+			<item value="army"/>
+			<item value="군"/>
+			<item value="군수강생"/>
+			<item value="수강"/>
+			<item value="군수강"/>
+			<item value="ctl."/>
+			<item value="presentation"/>
+			<item value="LaT"/>
+		</list>
+		<list key="replacehistory">
+			<item value="msg_box"/>
+			<item value=""/>
+			<item value="&lt;![CDATA[&gt;]]&gt;="/>
+			<item value="&lt;![CDATA[&lt;]]&gt;="/>
+			<item value="C.ATTEND_ID(+)"/>
+			<item value="92%"/>
+			<item value="test"/>
+			<item value="month"/>
+		</list>
+	</section>
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
+		<item value="261" key="DIALOG_WIDTH"/>
+		<item value="1|맑은 고딕|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|맑은 고딕" key="DIALOG_FONT_NAME"/>
+		<item value="381" key="DIALOG_HEIGHT"/>
+		<item value="238" key="DIALOG_Y_ORIGIN"/>
+		<item value="-622" key="DIALOG_X_ORIGIN"/>
+	</section>
+</section>

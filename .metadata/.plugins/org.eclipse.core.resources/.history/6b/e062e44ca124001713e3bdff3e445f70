@@ -1,0 +1,291 @@
+<%@page contentType="text/html; charset=utf-8" session="false" %>
+<%@page import="com.aimaxsoft.sssdframework.web.RequestParameter"%>
+<%@page import="com.aimaxsoft.sssdframework.db.DataCabinet"%>
+<%@page import="com.aimaxsoft.sssdframework.util.DateNTime"%>
+<%@page import="com.aimaxsoft.sssdframework.util.Change"%>
+<%@page import="com.aimaxsoft.sssdframework.i18n.ContentsManager"%>
+<%@page import="java.util.ResourceBundle"%>
+<%@page import="com.aimaxsoft.sssdframework.i18n.DateFormat"%>
+<%@page import="com.aimaxsoft.sssdframework.db.ZeroRecord"%>
+<%@page import="com.aimaxsoft.sssdframework.db.Record"%>
+<%@page import="util.EtcUtil"%>
+<%
+try {
+  DataCabinet dc = (DataCabinet)request.getAttribute("dc");
+  DataCabinet infoDc = (DataCabinet)request.getAttribute("infoDc");
+  DataCabinet dcP = (DataCabinet)request.getAttribute("dcP"); //권장진도율
+  DataCabinet dcP2 = (DataCabinet)request.getAttribute("dcP2"); //나의진도율
+  DataCabinet dcMP = (DataCabinet)request.getAttribute("dcMP"); //최대진도율
+  
+  RequestParameter param = (RequestParameter) request.getAttribute("param");
+  
+  ResourceBundle viewItem = ContentsManager.getResourceBundle("eclass_contents");
+%>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html lang="<%=viewItem.getLocale()%>">
+<head>
+
+<jsp:include page="/WEB-INF/jsp/inc/header_meta.jsp" ></jsp:include>
+<%@include file="/WEB-INF/jsp/inc/import.jsp" %>
+<%@include file="/WEB-INF/jsp/inc/jquery.jsp" %>
+
+<style type="text/css">
+.view{cursor:pointer;}
+.wb-choice{
+  background-color: #ffff60;
+  border-color: #ffff60;
+}
+.graph_bar {
+  float: left;
+  width: 685px;  
+  height: 10px;
+  margin-right: 3px;
+  border-radius: 5px;
+  background-color: #dee1e8;
+  margin-top: 3px;
+}
+.graph_gage {
+  position: relative;
+  top: 0px;
+  height: 10px;
+  border-radius: 5px;
+}
+</style>
+<script type="text/javascript">
+$(function() {
+  $.fx.speeds._default = 500;
+  $( "#dialog-review-form" ).dialog({
+    resizable: false,
+    autoOpen: false,
+    show: "blind",
+    hide: "fade", //explode"    
+    modal: true,
+    width: 600,
+    open: function(ev, ui) {$("#REVIEW").focus();  },
+    close: function(ev, ui) {$("#dialog-review").remove();  } 
+  });  
+  
+  $(".wb").click(function() {
+	  $(".wb").removeClass("wb-choice");
+    $(this).addClass("wb-choice");
+    
+    listPage();
+  });
+  
+  <%if(!"".equals(param.getString("WEEK_NO"))){%>
+  $("#week-<%=param.getString("WEEK_NO")%>").click();
+  <%} else {%>
+  listPage();
+  <%}%>
+});
+
+function listPage(){
+  if(!$(".wb-choice").attr("id")){
+    $(".wb-on:first").click();
+    return false;
+  }
+  
+  var no = $(".wb-choice").attr("id").substring(5);
+  
+  $.ajax({
+    url: "/ilos/st/course/online_list.acl",
+    type: "POST",
+    data: {
+      ud : "<%=param.getString("session.user_id")%>",
+      ky : "<%=param.getString("session.kjkey")%>",
+      WEEK_NO : no,
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(data){
+            $("#lecture_form").html(data);
+      },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+}
+
+function viewGo(week, seq, ed_dt, today, item) {
+  document.myform.lecture_weeks.value = seq;
+  //document.myform.WEEK_NO.value = week;
+  document.myform.item_id.value = item;
+  
+  if(ed_dt < today) {
+    if(confirm("<%=viewItem.getString("경고기간외학습") %>")) {
+      document.myform.submit();  
+    }
+  } else {
+    document.myform.submit();
+  }
+}
+
+function review_Go(k,i,c){
+  $.ajax({
+    url: "/ilos/st/course/online_review_form.acl",
+    type: "POST",
+    data: { 
+      ITEM_ID : i,
+      KJKEY : k,
+      CONTENT_ID : c,
+      encoding : "utf-8"
+          },
+    async: false,
+    success: function(html){
+        $("#dialog-review-form").html(html);
+      },
+    error : function(html) {
+            alert("error:"+html);
+      }
+  });
+  $("#dialog-review-form").dialog("open");
+}
+</script> 
+</head>
+<body>
+<%@ include file="/WEB-INF/jsp/inc/exit_stu_mode.jsp" %>
+<%@ include file="/WEB-INF/jsp/inc/skip.jsp" %>
+<div id="wrap">
+  <div id="headerWrap">
+    <%@ include file="/WEB-INF/jsp/inc/header.jsp" %> 
+    <%@ include file="/WEB-INF/jsp/inc/gnb.jsp" %>
+  </div>
+  <div id="containerWrap">
+    <div id="container">
+      <%@ include file="/WEB-INF/jsp/inc/lnb_student.jsp" %>
+      <div id="contents">
+				<h2><%=viewItem.getString("본문내용")%></h2>
+				<div id="content_location">
+          <div class="locationmap" style="top:-2px;"> 
+						<span class="hide"><%=viewItem.getString("현재본문위치")%> :</span>
+						<a href="/ilos/main/main_form.acl"><img src="/ilos/images/common/bul/icon_home.png" class="home" alt="<%=viewItem.getString("홈") %>" title="<%=viewItem.getString("홈") %>"></a><img src="/ilos/images/common/bul/icon_arrow.gif" alt=">"><a href="/ilos/st/course/submain_form.acl"><%=param.getString("session.kj_subjt_nm_"+EtcUtil.getLocate(viewItem)) %></a><img src="/ilos/images/common/bul/icon_arrow.gif" alt=">"><strong><a href="/ilos/st/course/online_list_form.acl?acl=online_list_form.acl&s=menu"><%=viewItem.getString("강의보기") %></a></strong><span>&nbsp;</span><img src="/ilos/images/themes/<%=styleColor %>/menual.png" onclick="menualPop('/st/course/online_list_form.acl','500','강의보기','3');" style="cursor: pointer; margin-right: 0px; margin-left: 0px; margin-bottom: 10px;" />
+					</div>
+					<h3 class="toptitle"><%=viewItem.getString("강의보기") %></h3>
+				</div>
+				<!-- Start Edit -->
+				<div id="content_text">
+          <%
+            //대구 대학교 요청사항에 의해 수업자료 저작권 문구 추가
+            //만약 다른 대학교도 똑같은 요청사항이 오면 content 문구로 빼서
+            //처리함 (2015.08.31)
+            if("daegu".equals(ServiceSite.getId())) {
+          %>
+          <div style="margin-top: -15px;">
+            <p><%=viewItem.getString("대구대복제방지안내문구")%></p>
+            <p style="text-align: center;"><%=viewItem.getString("대구대복제방지협회서명")%></p>
+          </div>
+          <%} %>
+          <div class="ibox">
+           <ul style="margin:10px; width:100%; display:block;">
+             <li style="float:left; margin-left: 10px;"><img src="/ilos/images/common/contents/messagebox_warning.png" width="64"></li>
+             <li style="margin-left:100px; margin-bottom: 5px; overflow: hidden;">
+               <div style="float:left;display:inline; padding-top:8px;"><img src="/ilos/images/common/bul/bul_box.gif"></div><div style="float:left;display:block;font-weight:normal;margin-left:10px;">학습 기간내에 출석인정 시간의 <%=infoDc.getRecord(0).getString("TERM_ATTEND_RATE") %>%이상 학습한 경우 출석으로 인정합니다.</div>
+             </li>
+             <%if(!"".equals(infoDc.getRecord(0).getString("TERM_LATE_RATE"))) {%>
+             <li style="margin-left:100px; margin-bottom: 5px;overflow: hidden;">
+               <div style="float:left;display:inline; padding-top:8px;"><img src="/ilos/images/common/bul/bul_box.gif"></div><div style="float:left;display:block;font-weight:normal;margin-left:10px;">학습 기간내에 출석인정 시간의 <%=infoDc.getRecord(0).getString("TERM_LATE_RATE") %>%이상 학습한 경우 지각으로 인정합니다.</div>
+             </li>
+             <%} %>
+             <%if(!"".equals(infoDc.getRecord(0).getString("TERM_EX_LATE_RT"))) {%>
+             <li style="margin-left:100px; margin-bottom: 5px;overflow: hidden;">
+               <div style="float:left;display:inline; padding-top:8px;"><img src="/ilos/images/common/bul/bul_box.gif"></div><div style="float:left;display:block;font-weight:normal;margin-left:10px;">학습 기간외에 출석인정 시간의 <%=infoDc.getRecord(0).getString("TERM_EX_LATE_RT") %>%이상 학습한 경우 지각으로 인정합니다.</div>
+             </li>
+             <%} %>
+             <li style="margin-left:100px; margin-bottom: 5px;overflow: hidden;">
+               <div style="float:left;display:inline; padding-top:8px;"><img src="/ilos/images/common/bul/bul_box.gif"></div><div style="float:left;display:block;font-weight:normal;margin-left:10px;"><%=viewItem.getString("경고3")%> </div>
+             </li>            
+           </ul>
+          </div>
+ <%--          <form name="myform" method="post" action="/ilos/st/course/online_view_form.acl">
+            <input type="hidden" id="lecture_weeks" name="lecture_weeks" />
+            <input type="hidden" id="WEEK_NO" name="WEEK_NO" />
+            <input type="hidden" id="_KJKEY" name="_KJKEY" value="<%=param.getString("session.kjkey") %>" />
+            <input type="hidden" id="kj_lect_type" name="kj_lect_type" value="<%=param.getString("session.kj_lect_type") %>" />
+            <input type="hidden" id="item_id" name="item_id" />
+          </form> --%>
+          <form name="myform" method="post" action="/ilos/st/course/contents_view_form.acl">
+            <input type="hidden" id="lecture_weeks" name="lecture_weeks" />
+            <input type="hidden" id="_KJKEY" name="_KJKEY" value="<%=param.getString("session.kjkey") %>" />
+            <input type="hidden" id="kj_lect_type" name="kj_lect_type" value="<%=param.getString("session.kj_lect_type") %>" />
+            </form>
+          <%
+          if(!dc.isError()) {
+            double rate = (dcP.getRecord(0).getDouble("PROGRESS_RT") / 100) * 90;
+            double rate2 = (dcP2.getRecord(0).getDouble("ATTEND_RT") / 100) * 90;
+          %>
+          <table border="1" summary="진도율 목록" style="margin-top: 10px; width: 100%;">
+            <colgroup>
+              <col style="width: 100px;" />
+              <col />
+            </colgroup>
+            <tbody>
+              <tr>
+                <th style="padding-top: 5px;">권장진도율</th>
+                <td style="padding-top: 5px;">
+                  <div>
+                    <div class="graph_gage site-background-color" style="width: <%=rate > 0 ? rate+"%" : "2px" %>; float: left; margin-top: 3px;"></div>
+                    <div style="float: left; margin-left: 10px; font-weight: bold;"><%=Change.formattedNumber("0.##", dcP.getRecord(0).getDouble("PROGRESS_RT") ) %>%</div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <th style="padding-top: 5px; vertical-align: text-top;;">나의진도율</th>
+                <td style="padding-top: 5px;">
+                  <div style="overflow: hidden;">
+                    <div class="graph_gage site-background-color" style="width: <%=rate2 > 0 ? rate2+"%" : "2px" %>; float: left; margin-top: 3px;"></div>
+                    <div style="float: left; margin-left: 10px; font-weight: bold;"><%=Change.formattedNumber("0.##", dcP2.getRecord(0).getDouble("ATTEND_RT") ) %>%</div>
+                  </div>
+                  <div>남은 기간 나의 최대 진도율은 <span style="font-weight: bold;"><%=Change.formattedNumber("0.##", dcMP.getRecord(0).getDouble("ATTEND_RT") ) %>%</span>입니다.</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div id="chart" style="margin-top: 10px;overflow:hidden;background-image:url(/ilos/images/common/thumb_1196.png);">
+            <div style="margin: 8px;overflow:hidden;">
+              <%
+                for(int i = 0; i < dc.size(); i++) {
+              %>
+              <%-- <div class="ibox wb wb-on" id="week-<%=dc.getRecord(i).getString("WEEK_NO")%>">
+                <div class="wb-week"><%=dc.getRecord(i).getString("WEEK_NO") %> <%=viewItem.getString("주차")%></div>
+              </div> --%>
+              
+              <div class="ibox3 wb wb-on <%="Y".equals(dc.getRecord(i).getString("CUR_WEEK_YN")) ? "wb-choice" : "" %>" id="week-<%=dc.getRecord(i).getString("WEEK_NO")%>" style="margin-right: 0;">
+                <div class="wb-week-on">
+                  <img src="/ilos/images/common/contents/lecture_type_1.png"  style="margin-bottom: 5px;" /><br />
+                  <span class="wb-week"><%=dc.getRecord(i).getString("WEEK_NO") %></span>주
+                </div>
+                <%if("".equals(dc.getRecord(i).getString("TOTAL_CNT"))) {%>
+                <div class="wb-status">&nbsp;</div>
+                <%} else { %>
+                <div class="wb-status"><img src="/ilos/images/common/chk_green.png"> <%=dc.getRecord(i).getString("ATD_CNT") %>/<%=dc.getRecord(i).getString("TOTAL_CNT") %></div>
+                <%} %>
+              </div>
+              <%} %>
+            </div>
+          </div>
+          
+          <div id="lecture_form" style="border-top: 3px solid #ffff60; border-bottom: 3px solid #ffff60; margin-top: 20px;"></div>
+          <%} else { %>
+          <div style="text-align: center;border: 1px solid #aaa; padding: 30px 0 30px 5px; margin-bottom: 5px;background-color: #fEfEfE; margin-top: 20px;"><%=dc.getMessage() %></div>
+          <%} %>
+        </div>
+          
+				<!-- //End Edit -->
+				<div class="hide-quicktop" id="hide-quicktop"><a href="#skipNavigation"><%=viewItem.getString("건너뛰기메뉴바로가기")%></a></div>
+			</div>
+		</div>
+	</div>
+	<div id="footerWrap02">
+		<%@ include file="/WEB-INF/jsp/inc/footer_professor.jsp" %>
+	</div>
+</div>
+<div id="dialog-review-form" title="<%=viewItem.getString("리뷰작성")%>"></div>
+</body>
+</html>
+<%
+} catch(Exception e) {
+  e.printStackTrace();
+}
+%>

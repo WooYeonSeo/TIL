@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;ilos4.1_00/webapp/js/htmlToPDF/pdfmake.min.js&apos; to &apos;pdfmake.min.js(0.1.34)&apos;" description="Rename resource &apos;pdfmake.min.js&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="webapp/js/htmlToPDF/pdfmake.min.js" name="pdfmake.min.js(0.1.34)" stamp="1515661834385" updateReferences="true"/>
+</session>
