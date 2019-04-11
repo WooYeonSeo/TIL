@@ -1,0 +1,22 @@
+cli 명령어
+git init // 깃 세팅
+git add -A // 모든 파일 스테이징
+git commit -m "first commit" // 스테이징한 파일들 커밋
+git remote add origin <remote 깃 리파지토리 경로>  어디에 올릴껀지 알려주고
+git push -u origin master // master branch 로 커밋 
+
+//내려받기
+git pull origin master 하면 origin의 내용이 master로 복사
+
+// 강제 푸시
+git push origin master --force
+
+
+
+커밋을 하지 않고 git stash 나 git reset등 여러가지 명령어로 당신의 코드를 초기상태(마지막 커밋 상태)로 되돌릴 수 있다
+
+git push origin master 
+origin은 원격 저장소 이름이고, master은 현재 사용하는 컴퓨터의 브랜치 이름
+ 
+//매번 비밀번호를 치기 귀찮다면 
+git config --global credential.helper 'store --file 경로' 
