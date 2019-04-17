@@ -1,22 +1,22 @@
-1. ÀÚ·á±¸Á¶
-+ ¹è¿­(Array)
-+ ¸®½ºÆ®(List): Doubly Linked List / Singly Linked List
-+ ½ºÅÃ(Stack)
-+ Å¥(Queue)
-+ ¸Ê(Map)
-+ ¼Â(Set)
-+ Æ®¸®/¹ÙÀÌ³Ê¸® Æ®¸® (Tree/Binary Tree)
-+ ÇÁ¶óÀÌ¿À¸®Æ¼ Å¥(Priority Queue)
-+ ±×·¡ÇÁ(Graph)
+1. ìë£Œêµ¬ì¡°
++ ë°°ì—´(Array)
++ ë¦¬ìŠ¤íŠ¸(List): Doubly Linked List / Singly Linked List
++ ìŠ¤íƒ(Stack)
++ í(Queue)
++ ë§µ(Map)
++ ì…‹(Set)
++ íŠ¸ë¦¬/ë°”ì´ë„ˆë¦¬ íŠ¸ë¦¬ (Tree/Binary Tree)
++ í”„ë¼ì´ì˜¤ë¦¬í‹° í(Priority Queue)
++ ê·¸ë˜í”„(Graph)
 
-2. ¾Ë°í¸®Áò 
-+ °Ë»ö ¾Ë°í¸®Áò (Search Algorithms): Linear, Binary, ³Êºñ ¿ì¼±(Breadth-first), ±íÀÌ ¿ì¼±(Depth-first)
-+ Á¤·Ä ¾Ë°í¸®Áò (Sorting Algorithms): ¹öºí¼ÒÆ®(Bubble Sort), ¼¿·º¼Ç ¼ÒÆ®(Selection Sort), Äü ¼ÒÆ®(Quick Sort), ¸ÓÁö¼ÒÆ®(Merge Sort), Èü ¼ÒÆ®(Heap Sort)
-+ µ¿Àû ÇÁ·Î±×·¡¹Ö (Dynamic Programming)
-+ ÃÖ´Ü°Å¸® Ã£±â ¾Ë°í¸®Áò ((Optional) Shortest-path Algorithms): Bellman-Ford Dijkstra
+2. ì•Œê³ ë¦¬ì¦˜ 
++ ê²€ìƒ‰ ì•Œê³ ë¦¬ì¦˜ (Search Algorithms): Linear, Binary, ë„ˆë¹„ ìš°ì„ (Breadth-first), ê¹Šì´ ìš°ì„ (Depth-first)
++ ì •ë ¬ ì•Œê³ ë¦¬ì¦˜ (Sorting Algorithms): ë²„ë¸”ì†ŒíŠ¸(Bubble Sort), ì…€ë ‰ì…˜ ì†ŒíŠ¸(Selection Sort), í€µ ì†ŒíŠ¸(Quick Sort), ë¨¸ì§€ì†ŒíŠ¸(Merge Sort), í™ ì†ŒíŠ¸(Heap Sort)
++ ë™ì  í”„ë¡œê·¸ë˜ë° (Dynamic Programming) https://github.com/WooYeonSeo/TIL/tree/master/TIL/src/dynamic
++ ìµœë‹¨ê±°ë¦¬ ì°¾ê¸° ì•Œê³ ë¦¬ì¦˜ ((Optional) Shortest-path Algorithms): Bellman-Ford Dijkstra
 
 
-* ÀÚ·á±¸Á¶/ ¾Ë°í¸®ÁòÀÌ »ç¿ëµÇ´Â ÀÌÀ¯
-* »ç¿ëÇÏ´Â ¹æ¹ı
-* Best, Average, Worst-CaseÀÇ ½Ã°£ ¹× °ø°£ º¹Àâµµ ( ±¸Çö µğÅ×ÀÏÀ» ¾Ë°í ÀÖ°í µû¶ó¼­ ½Ã°£ º¹Àâµµ¿Í °ø°£ º¹Àâµµ¸¦ ¸Ó¸®¼Ó¿¡¼­ °è»ê )
-* 'Á÷Á¢±¸Çö'
+* ìë£Œêµ¬ì¡°/ ì•Œê³ ë¦¬ì¦˜ì´ ì‚¬ìš©ë˜ëŠ” ì´ìœ 
+* ì‚¬ìš©í•˜ëŠ” ë°©ë²•
+* Best, Average, Worst-Caseì˜ ì‹œê°„ ë° ê³µê°„ ë³µì¡ë„ ( êµ¬í˜„ ë””í…Œì¼ì„ ì•Œê³  ìˆê³  ë”°ë¼ì„œ ì‹œê°„ ë³µì¡ë„ì™€ ê³µê°„ ë³µì¡ë„ë¥¼ ë¨¸ë¦¬ì†ì—ì„œ ê³„ì‚° )
+* 'ì§ì ‘êµ¬í˜„'
