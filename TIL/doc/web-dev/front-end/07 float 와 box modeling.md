@@ -22,6 +22,8 @@
  </pre>
  - green 이 float:left 가 되면서 그 공간이 붕 뜬 것으로 인식 red가 green 아래로 오게 됨 .
  - z 축으로 떠있는 개념이지만 2차원에서는 볼 수가 없으므로 배치에 활용 가능 
+ + **단 자식이 float 인 경우 붕 떠있기 때문에 자식으로 생각하지 않음. 따라서 그 부모에 배경을 주는 경우 색이 없을 수 있다. 따라서 overflow를 주어서 float를 인식하게 함.** 
+    overflow : hidden; 또는 hidden;
  + float 속성을 해제 'clear:both' 
   
  2. Box Modeling : margin border padding 
