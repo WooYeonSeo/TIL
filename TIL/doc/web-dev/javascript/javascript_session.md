@@ -10,7 +10,8 @@
 > 쿠키는 헤더정보에 set-Cookie에 key value형태로 담아서 보낸다.
 > 세션은 헤더정보에 set-cookie에 connect.sid = 가 있다. 고유한 값을 전달하고있다. sid값을 계속 보내서 해당 벨류가 같은 것은 같은 사용자라고 볼 수 있다. 
 > Connect.sid를 이용해서 사용자를 구분해서 카운트 값을 저장해 놨다가 해당 sid로 들어오면 서버의 해당 sid의 count객체에 접근해서 값을 변경하는 것.
-**[how to use : app_session.js]**
+
+#### **[how to use : app_session.js]**
 1. npm install express-session —save 
 2. Const session = require(‘express-session’);
 3. 미들웨어에 등록 
@@ -24,7 +25,8 @@ app.use(session({
 ```
 4. Use   // connect.sid로 접근하는 사용자는 count에 접근 할 수 있다.  요청받아서 서버에서 작업 : req.sessio.cont = 1;  // 해당 sid 계정의 세션 값을 저장하는 것 동시에 값을 읽어올수도 있다. res.send({count : req.session.count});
 
-그렇다면 어디에 저장이되는가 : express-session 모듈은 메모리에 저장한다 따라서 서버 재부팅하면 세션값이 날아간다. 따라서  사용자 작업중에서는 
+#### **그렇다면 어디에 저장이되는가**
+ : express-session 모듈은 메모리에 저장한다 따라서 서버 재부팅하면 세션값이 날아간다. 따라서  사용자 작업중에서는 
 실제로 사용할때는 데이터베이스에서 세션값을 직접 저장하는 것을 해야한다.
 ``` javascript 
 app.use(session({
@@ -36,4 +38,4 @@ app.use(session({
   store:new FileStore()
 }));
 ```
-+ 주의 : redirect 시 변경된 세션값이 반영이 되지 않을 수 있어서 save() 를 이용해서 저장후 보내야 한다.
++ 주의 : redirect 시 변경된 세션값이 반영이 되지 않을 수 있어서 save() 를 이용해서 저장 후 콜백함수에서 보내야 한다.
