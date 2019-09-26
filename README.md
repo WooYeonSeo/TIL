@@ -1,7 +1,9 @@
 # TIL
 TODAY I LEARNED
 
+daily log files : https://github.com/WooYeonSeo/TIL/tree/master/TIL/daily_log
 
+---
 ### javascript 
 1. 프로토타입과 object 상속 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/javascript/javascript_prototype_ObjectExtend.md
 2. class 상속 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/javascript/javascript_classExtend.md
