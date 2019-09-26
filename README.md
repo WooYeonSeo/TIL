@@ -11,6 +11,8 @@ daily log files : https://github.com/WooYeonSeo/TIL/tree/master/TIL/daily_log
 ### nodejs
 1. 쿠키 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/nodejs/javascript_cookie.md 
 2. 세션 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/nodejs/javascript_session.md
+3. passport : https://github.com/WooYeonSeo/TIL/blob/a87ec94d6d5be1fcbdb1bbc2ae778b004742b173/TIL/doc/web-dev/nodejs/passport.md
+4. ubunto server에 node 설치 : https://github.com/WooYeonSeo/TIL/tree/a87ec94d6d5be1fcbdb1bbc2ae778b004742b173
 
 ### CSS&HTML
 1. css_기본사용방법 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/front-end/01%20css_%EA%B8%B0%EB%B3%B8%EC%82%AC%EC%9A%A9%EB%B0%A9%EB%B2%95.md
@@ -22,3 +24,6 @@ daily log files : https://github.com/WooYeonSeo/TIL/tree/master/TIL/daily_log
 7. float 와 box modeling : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/front-end/07%20float%20%EC%99%80%20box%20modeling.md 
 8. float 기반 sample layout : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/front-end/08%20float%20%EA%B8%B0%EB%B0%98%20%EC%83%98%ED%94%8C%20%ED%99%94%EB%A9%B4%20%EB%A0%88%EC%9D%B4%EC%95%84%EC%9B%83%20%EA%B5%AC%EC%84%B1.md 
 9. css animation : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/front-end/11%20css_animation.md
+
+
+### no
