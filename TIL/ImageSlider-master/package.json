@@ -1,0 +1,21 @@
+{
+  "name": "ImageSlider",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/js/App.js",
+  "scripts": {
+    "build": "webpack",
+    "devserver": "webpack-dev-server --open --progress"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
+    "babel-loader": "^8.0.0",
+    "webpack": "^4.17.1",
+    "webpack-cli": "^3.1.0",
+    "webpack-dev-server": "^3.1.6"
+  }
+}

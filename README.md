@@ -8,7 +8,7 @@ TODAY I LEARNED
 
 ### nodejs
 1. 쿠키 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/nodejs/javascript_cookie.md 
-3. 세션 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/nodejs/javascript_session.md
+2. 세션 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/nodejs/javascript_session.md
 
 ### CSS&HTML
 1. css_기본사용방법 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/front-end/01%20css_%EA%B8%B0%EB%B3%B8%EC%82%AC%EC%9A%A9%EB%B0%A9%EB%B2%95.md
