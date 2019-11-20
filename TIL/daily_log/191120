@@ -1,0 +1,43 @@
+### 오늘 한 것 
+- noe4j DB 설계
+  - neo4j 는 관계도 테이블이다. 사실 rdb처럼 생각하면 안되지만 관계도 프로퍼티를 가질 수 있으므로 충분히 활용 대상으로 봐야겠다.
+- 동기/비동기 블로킹/논블로킹에 대해 잘 모르고 있는 것 같다. 동기 비동기는 작업완료 여부 확인 주체에 따라 다르고, 동기 비동기는 주도권? 작업권의 반환 시점에 따라 달라진다는 것 같은데, 더 공부해야겠다. 
+https://homoefficio.github.io/2017/02/19/Blocking-NonBlocking-Synchronous-Asynchronous/
+- 요즘 리엑트 타입스크립트를 적용하는데 속도가 멈추는 부분들이 있다. 하지만 또 생각해보면 어차피 뒤적거릴 부분이었던 것들도 많았다.
+   - typescript 장점 :  컴파일 단계에서 에러를 잡자
+   - 자바스크립트 특징 : 런타임 언어 (파일 받아서 실행할 때 기계어로 바꿔서 실행)
+   - 컴파일언어는 근데 모든언어를 보고 다 기계어로 바꿔줘야함 , 속도는 느릴수 있지만 에러를 잡을 수 있음
+    > 인터프린터언어==런타임언어
+- react svc파일을 로드할 때 object tag와 styled component를 같이 사용하면 object tag 안에 생성되는 svg tag에 스타일을 styled component로 입힐 수 없는 이슈가 있었다. styled component 가 적용이 된 다음에 obejct 태그의 스타일이 적용되는 것 같다. 
+-> 지금은 svg 자체를 재사용가능한 버튼 컴포넌트로 생각하고 컴포넌트로 작업을 해 두었다 
+
+-  apollo client typescript를 이용해서 useQuery를 작성을 해봤다.문서는 잘 되어있지만, 데이터 fetching을 하는 부분인 state관리(랜더링)와 직결되는 부분이라 생각은 더해봐야겠다.
+https://www.apollographql.com/docs/react/development-testing/static-typing/
+
+
+```typescript
+
+interface ILanguages {
+  name: string;
+}
+
+interface Languages {
+  languages: ILanguages[];
+}
+
+const TEST_QUERY = gql`
+  query languages {
+    languages {
+      name
+    }
+  }
+`;
+
+// hooks 에서 useQuery
+ const { loading, data } = useQuery<Languages, {}>(TEST_QUERY, {
+    variables: {}
+  });
+```
+### 내일할 것 
+- pagination data fetching
+- infinite scroll
