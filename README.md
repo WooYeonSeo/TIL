@@ -4,6 +4,7 @@ TODAY I LEARNED
 daily log files : https://github.com/WooYeonSeo/TIL/tree/master/TIL/daily_log
 
 ---
+## 정리한 내용
 ### javascript 
 1. 프로토타입과 object 상속 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/javascript/javascript_prototype_ObjectExtend.md
 2. class 상속 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/javascript/javascript_classExtend.md
@@ -27,5 +28,6 @@ daily log files : https://github.com/WooYeonSeo/TIL/tree/master/TIL/daily_log
 
 
 ### 자료구조
-1. [연결리스트](https://github.com/WooYeonSeo/TIL/tree/master/TIL/doc/algo/data-structure)
+1. [연결리스트](https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/algo/data-structure/LinkedList.md)
+2. [Heap](https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/algo/data-structure/Heap.md)
 
