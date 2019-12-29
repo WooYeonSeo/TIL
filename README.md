@@ -27,4 +27,5 @@ daily log files : https://github.com/WooYeonSeo/TIL/tree/master/TIL/daily_log
 
 
 ### 자료구조
-1. [](https://github.com/WooYeonSeo/TIL/tree/master/TIL/doc/algo/data-structure)
+1. [연결리스트](https://github.com/WooYeonSeo/TIL/tree/master/TIL/doc/algo/data-structure)
+
