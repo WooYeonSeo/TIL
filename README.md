@@ -8,7 +8,7 @@ daily log files : https://github.com/WooYeonSeo/TIL/tree/master/TIL/daily_log
 ### javascript 
 1. 프로토타입과 object 상속 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/javascript/javascript_prototype_ObjectExtend.md
 2. class 상속 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/javascript/javascript_classExtend.md
-
+3. scope : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/javascript/scope.md
 ### nodejs
 1. 쿠키 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/nodejs/javascript_cookie.md 
 2. 세션 : https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/web-dev/nodejs/javascript_session.md
