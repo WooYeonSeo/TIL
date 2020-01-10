@@ -30,4 +30,5 @@ daily log files : https://github.com/WooYeonSeo/TIL/tree/master/TIL/daily_log
 ### 자료구조
 1. [연결리스트](https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/algo/data-structure/LinkedList.md)
 2. [Heap](https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/algo/data-structure/Heap.md)
+3. [Tree](https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/algo/data-structure/tree.md)
 
