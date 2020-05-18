@@ -47,7 +47,7 @@ ex) 웹브라우져인지 메일 프로그램인지..
 
 ### ⑴ 연결 수립
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/6257e11b-db2e-4c23-9d63-041564a512b2/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/6257e11b-db2e-4c23-9d63-041564a512b2/Untitled.png)
+![3wayhandshake](https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/Network/Images/3wayhandshake.png)
 
 - #1 : 연결 확립 허기를 받기 위한 SYN → SYN 1 ACK 0
 - #2 : 연결을 허가한다는 응답 ACK과 다시 연결 확립 허가를 받기 위한 ACK를 다시 보낸다 → SYN 1 ACK 1
@@ -55,7 +55,7 @@ ex) 웹브라우져인지 메일 프로그램인지..
 
 ### ⑵ 연결 해제
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/f2f8c035-2e44-44a6-b735-460ebd2938a4/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/f2f8c035-2e44-44a6-b735-460ebd2938a4/Untitled.png)
+![4wayhandshake](https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/Network/Images/4wayhandshake.png)
 
 - #1 : 컴퓨터 1에서 2로 연결 종료 요청을 보낸다 FIN
 - #2 : 컴퓨터 2에서 1로 연결 종료 응답(ACK)을 반환한다.
@@ -66,11 +66,11 @@ FIN ACK 가 1 로 활성화
 
 ---
 
+![tcpheader](https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/Network/Images/tcpheader.png)
+
 # 일련번호와 확인 응답번호
 
 연결 수립(3 Way Handshake)이후 데이터 전송에 사용되는 헤더의 정보.
-
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/86f599ed-bf56-4bf5-96e1-499510cdb5c5/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/86f599ed-bf56-4bf5-96e1-499510cdb5c5/Untitled.png)
 
 ## 일련번호 (Sequence Number)
 
@@ -80,7 +80,8 @@ FIN ACK 가 1 로 활성화
 
 수신 측이 몇번째 데이터를 수신했는지 송신 측 에 알려주는 역할 
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/4434d40c-e623-4a6d-8ae1-980999f5094b/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/4434d40c-e623-4a6d-8ae1-980999f5094b/Untitled.png)
+
+![SequenceNumberNAcknowledgeNumber](https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/Network/Images/SequenceNumber.png)
 
 ① 컴퓨터 1은 컴퓨터 2로 200바이트의 데이터를 전송한다.
 
@@ -130,7 +131,7 @@ FIN ACK 가 1 로 활성화
 
 - UDP 헤더가 붙은 데이터를 UDP 데이터그램 이라고 한다
 
-![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/dfd97616-06e7-4895-814f-137489d98bc2/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/dfd97616-06e7-4895-814f-137489d98bc2/Untitled.png)
+![UDPHeader](https://github.com/WooYeonSeo/TIL/blob/master/TIL/doc/Network/Images/UDPHeader.png)
 
 ![https://s3-us-west-2.amazonaws.com/secure.notion-static.com/9619100a-a267-4196-a5f4-0ce0b8f00046/Untitled.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/9619100a-a267-4196-a5f4-0ce0b8f00046/Untitled.png)
 
